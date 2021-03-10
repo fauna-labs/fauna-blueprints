@@ -1,0 +1,14 @@
+CreateFunction({
+  name: 'register',
+  body: Query(Lambda(['email', 'password'],
+    Create(Collection('accounts'), {
+      // credentials is a special field, the contents will never be returned
+      // and will be encrypted. { password: ... } is the only format it currently accepts.
+      credentials: { password: Var('password') },
+      // everything you want to store in the document should be scoped under 'data'
+      data: {
+        email: Var('email')
+      }
+    }))),
+  role: 'server'
+})

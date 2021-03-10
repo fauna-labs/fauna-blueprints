@@ -1,0 +1,15 @@
+CreateIndex({
+  name: 'accounts_by_email',
+  source: Collection('accounts'),
+  // We will search on email
+  terms: [
+    {
+      field: ['data', 'email']
+    }
+  ],
+  // if no values are added, the index will just return the reference.
+  // Prevent that accounts with duplicate e-mails are made.
+  // uniqueness works on the combination of terms/values
+  unique: true,
+  serialized: true
+})

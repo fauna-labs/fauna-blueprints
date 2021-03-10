@@ -1,0 +1,23 @@
+CreateRole({
+  name: 'loggedin',
+  membership: [
+    {
+      // The accounts collection gets access
+      resource: Collection('accounts')
+    }
+  ],
+  privileges: [
+    {
+      resource: Collection('dinos'),
+      actions: {
+        read: true
+      }
+    },
+    {
+      resource: Function('logout'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

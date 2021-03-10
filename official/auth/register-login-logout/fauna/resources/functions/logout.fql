@@ -1,0 +1,5 @@
+CreateFunction({
+  name: 'logout',
+  body: Query(Lambda(['all'], Logout(Var('all')))),
+  role: 'server'
+})
