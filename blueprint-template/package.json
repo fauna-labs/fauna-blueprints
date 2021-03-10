@@ -1,0 +1,30 @@
+{
+    "name": "<blueprint-template>",
+    "version": "1.0.0",
+    "description": "<blueprint description>",
+    "ava": {
+        "require": [
+            "esm"
+        ]
+    },
+    "scripts": {
+        "test": "ava -T 200s --fail-fast"
+    },
+    "keywords": [
+        "fauna",
+        "auth",
+        "fql"
+    ],
+    "author": "<author>",
+    "license": "0BSD",
+    "devDependencies": {
+        "ava": "^3.15.0",
+        "dotenv": "^8.2.0",
+        "eslint": "^7.21.0",
+        "eslint-config-standard": "^16.0.2",
+        "eslint-plugin-ava": "^11.0.0",
+        "esm": "^3.2.25",
+        "fauna-schema-migrate": "^1.0.0",
+        "faunadb": "^4.1.1"
+    }
+}

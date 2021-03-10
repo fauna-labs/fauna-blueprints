@@ -1,0 +1,5 @@
+The fauna folder is created by the fauna-schema-migrate tool along with the migrations and resources folders within that fauna folder.
+
+* resources: schema migrate monitors the resource folder and allows you to call 'generate' to encode the current fauna resources in a migration. Resources folders can contain both plain FQL (.fql files) as well as JavaScript files with a default export (.js files). A resource is defined by using the corresponding Create function (CreateFunction, CreateCollection, ...). Updates and Deletes are automatically handled by the generated migrations.
+* migrations: those generated migrations will go to the migrations folder. You should not adapt migrations manually.
+* src: the migration tool accepts both .js files as .fql files. Once we depend on external code, we will place it in this folder. This folder will therefore contain other fauna related code that is not being monitored by fauna schema migrate tool but imported from the resources files. It could contain helper functions which are used in your resources or a helper function to populate some data.
