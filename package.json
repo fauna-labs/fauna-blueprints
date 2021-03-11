@@ -2,14 +2,6 @@
   "name": "fauna-blueprints",
   "version": "1.0.0",
   "description": "A number of tested FQL blueprints to kickstart your Fauna-FQL-based application which can be instantiated using the fauna-schema-migrate tool. ",
-  "ava": {
-    "require": [
-      "esm"
-    ]
-  },
-  "scripts": {
-    "test": "ava -T 200s --fail-fast"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fauna-brecht/fauna-blueprints.git"
@@ -32,13 +24,9 @@
   },
   "homepage": "https://github.com/fauna-brecht/fauna-blueprints#readme",
   "devDependencies": {
-    "ava": "^3.15.0",
-    "dotenv": "^8.2.0",
     "eslint": "^7.21.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-ava": "^11.0.0",
-    "esm": "^3.2.25",
-    "fauna-schema-migrate": "^1.0.0",
-    "faunadb": "^4.1.1"
+    "fauna-schema-migrate": "^2.0.0"
   }
 }
