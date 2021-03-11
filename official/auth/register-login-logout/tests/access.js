@@ -1,5 +1,5 @@
 import test from 'ava'
-import { populateDatabaseSchemaFromFiles, setupTestDatabase, destroyTestDatabase, getClient } from './helpers/_setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
 import { delay } from './helpers/_delay'
 const q = fauna.query
@@ -9,9 +9,9 @@ const testName = 'access'
 test.before(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
-  t.context.databaseClients = await setupTestDatabase(testName)
+  t.context.databaseClients = await setupTestDatabase(fauna, testName)
   const client = t.context.databaseClients.childClient
-  await populateDatabaseSchemaFromFiles(client, [
+  await populateDatabaseSchemaFromFiles(q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/functions/register.fql',
     'fauna/resources/indexes/accounts-by-email.fql',
@@ -29,7 +29,8 @@ test.before(async (t) => {
 
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
+  await deleteMigrationDir()
 })
 
 test(testName + ': within 10 seconds (ttl of access token), we can access data via the test membership role', async t => {
@@ -37,7 +38,7 @@ test(testName + ': within 10 seconds (ttl of access token), we can access data v
   const client = t.context.databaseClients.childClient
   const loginResult = await client.query(Call('login-modified', 'brecht@brechtsdomain.be', 'verysecure'))
   const accessToken = loginResult.token.secret
-  const loggedInClient = getClient(accessToken)
+  const loggedInClient = getClient(fauna, accessToken)
   const doc = await loggedInClient.query(Get(t.context.testDocumentRef))
   t.truthy(doc.data)
   t.is(doc.data.hello, 'world')
@@ -49,7 +50,7 @@ test(testName + ': after 10 seconds (ttl of access token), we can no longer acce
   const loginResult = await client.query(Call('login-modified', 'brecht@brechtsdomain.be', 'verysecure'))
 
   const accessToken = loginResult.token.secret
-  const loggedInClient = getClient(accessToken)
+  const loggedInClient = getClient(fauna, accessToken)
   // wait 11s
   await delay(11000)
 

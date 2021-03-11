@@ -1,5 +1,5 @@
 import test from 'ava'
-import { populateDatabaseSchemaFromFiles, setupTestDatabase, destroyTestDatabase, getClient } from './helpers/_setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
 const q = fauna.query
 const { Call, Create, Collection, Get } = q
@@ -8,9 +8,9 @@ const testName = 'logout'
 test.before(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
-  t.context.databaseClients = await setupTestDatabase(testName)
+  t.context.databaseClients = await setupTestDatabase(fauna, testName)
   const client = t.context.databaseClients.childClient
-  await populateDatabaseSchemaFromFiles(client, [
+  await populateDatabaseSchemaFromFiles(q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/collections/dinos.fql',
     'fauna/resources/functions/register.fql',
@@ -25,16 +25,17 @@ test.before(async (t) => {
 
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
+  await deleteMigrationDir()
 })
 
 test(testName + ': we can logout one token of a specific user', async t => {
   t.plan(4)
   const client = t.context.databaseClients.childClient
   const loginResult1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
-  const loggedInClient1 = getClient(loginResult1.token.secret)
+  const loggedInClient1 = getClient(fauna, loginResult1.token.secret)
   const loginResult2 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
-  const loggedInClient2 = getClient(loginResult2.token.secret)
+  const loggedInClient2 = getClient(fauna, loginResult2.token.secret)
   // we can retrieve the document
   const doc1 = await loggedInClient1.query(Get(t.context.testDocumentRef))
   let doc2 = await loggedInClient2.query(Get(t.context.testDocumentRef))
@@ -57,9 +58,9 @@ test(testName + ': we can logout all tokens of a specific user', async t => {
   t.plan(4)
   const client = t.context.databaseClients.childClient
   const loginResult1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
-  const loggedInClient1 = getClient(loginResult1.token.secret)
+  const loggedInClient1 = getClient(fauna, loginResult1.token.secret)
   const loginResult2 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
-  const loggedInClient2 = getClient(loginResult2.token.secret)
+  const loggedInClient2 = getClient(fauna, loginResult2.token.secret)
   // we can retrieve the document
   const doc1 = await loggedInClient1.query(Get(t.context.testDocumentRef))
   const doc2 = await loggedInClient2.query(Get(t.context.testDocumentRef))
