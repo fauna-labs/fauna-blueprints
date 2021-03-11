@@ -1,0 +1,11 @@
+CreateIndex({
+  name: 'access_token_by_refresh_token',
+  source: Tokens(),
+  terms: [
+    {
+      field: ['data', 'refresh']
+    }
+  ],
+  unique: true,
+  serialized: true
+})
