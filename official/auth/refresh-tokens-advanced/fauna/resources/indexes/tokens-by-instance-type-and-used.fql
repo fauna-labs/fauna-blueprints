@@ -1,0 +1,16 @@
+CreateIndex({
+  name: 'tokens_by_instance_type_and_used',
+  source: Tokens(),
+  terms: [
+    {
+      field: ['instance']
+    },
+    {
+      field: ['data', 'type']
+    },
+    {
+      field: ['data', 'used']
+    }
+  ],
+  serialized: true
+})
