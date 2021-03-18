@@ -79,13 +79,6 @@ export function LogoutAccessAndRefreshToken () {
   )
 }
 
-export function LogoutAllAccessAndRefreshToken () {
-  return q.Map(
-    Paginate(Match(Index('tokens_by_instance'), CurrentIdentity())),
-    Lambda(['t'], Delete(Var('t')))
-  )
-}
-
 export function IsCalledWithAccessToken () {
   return Equals(Select(['data', 'type'], Get(CurrentToken()), false), 'access')
 }
