@@ -2,9 +2,9 @@ import test from 'ava'
 import path from 'path'
 import * as fauna from 'faunadb'
 import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
-import { GRACE_PERIOD_SECONDS } from '../fauna/src/refresh'
 import { delay } from './helpers/_delay'
 import { REFRESH_TOKEN_REUSE_ERROR } from '../fauna/src/anomalies'
+import { GRACE_PERIOD_SECONDS } from './resources/functions/_refresh-modified'
 const q = fauna.query
 const { Call, Create, Collection, Get, Paginate, Documents, Lambda, Var } = q
 
@@ -21,7 +21,6 @@ test.before(async (t) => {
     'fauna/resources/collections/dinos.fql',
     'fauna/resources/functions/register.fql',
     'fauna/resources/functions/login.js',
-    'fauna/resources/functions/refresh.js',
     'fauna/resources/functions/logout.js',
     'fauna/resources/indexes/access-token-by-refresh-token.fql',
     'fauna/resources/indexes/accounts-by-email.fql',
@@ -29,6 +28,7 @@ test.before(async (t) => {
     'fauna/resources/roles/refresh.js',
     // Custom function for tests to verify the age calculation.
     'tests/resources/functions/_get-age-of-refresh-token.js',
+    'tests/resources/functions/_refresh-modified.js',
     'tests/resources/roles/_refresh-get-age-access.js'
   ])
   // create data, register, and login.
@@ -82,7 +82,7 @@ test(testName + ': we are NOT able to refresh access tokens multiple times after
   await delay(GRACE_PERIOD_SECONDS * 1000 + 2000)
   // The age is now higher than the grace period.
   const age = await refreshClient.query(Call('get-age-of-refresh-token'))
-  t.true(age > 20000)
+  t.true(age > GRACE_PERIOD_SECONDS)
   const refreshResult2 = await refreshClient.query(Call('refresh'))
   t.deepEqual(refreshResult2, REFRESH_TOKEN_REUSE_ERROR)
   const refreshResult3 = await refreshClient.query(Call('refresh'))
