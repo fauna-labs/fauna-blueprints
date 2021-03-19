@@ -81,14 +81,7 @@ export function CreateAccessAndRefreshToken (instance, accessTtlSeconds, refresh
   )
 }
 
-export function InvalidateAccessAndRefreshToken (refreshTokenRef) {
-  return Do(
-    InvalidateAccessToken(refreshTokenRef),
-    InvalidateRefreshToken(refreshTokenRef)
-  )
-}
-
-function InvalidateRefreshToken (refreshTokenRef) {
+export function InvalidateRefreshToken (refreshTokenRef) {
   return Update(refreshTokenRef, { data: { used: true, timeUsed: Now() } })
 }
 

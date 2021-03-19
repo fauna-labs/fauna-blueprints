@@ -1,5 +1,5 @@
 import test from 'ava'
-import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
 const q = fauna.query
 const { Call, Create, Collection, Get } = q
@@ -26,7 +26,6 @@ test.before(async (t) => {
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
   await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
-  await deleteMigrationDir()
 })
 
 test(testName + ': we can logout one token of a specific user', async t => {

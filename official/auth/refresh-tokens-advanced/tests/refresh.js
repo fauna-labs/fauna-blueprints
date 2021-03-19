@@ -5,15 +5,19 @@ import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSche
 import { delay } from './helpers/_delay'
 import { REFRESH_TOKEN_REUSE_ERROR } from '../fauna/src/anomalies'
 import { GRACE_PERIOD_SECONDS } from './resources/functions/_refresh-modified'
+import { verifyTokens } from './helpers/_test-extensions'
 const q = fauna.query
 const { Call, Create, Collection, Get, Paginate, Documents, Lambda, Var } = q
 
-const testName = path.basename(__filename)
+let index = 0
 
-test.before(async (t) => {
+test.beforeEach(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
-  t.context.databaseClients = await setupTestDatabase(fauna, testName)
+
+  t.context.testName = path.basename(__filename) + (index = ++index)
+  t.context.databaseClients = await setupTestDatabase(fauna, t.context.testName)
+  index = index + 1
   const adminClient = t.context.databaseClients.childClient
   await populateDatabaseSchemaFromFiles(q, adminClient, [
     'fauna/resources/collections/accounts.fql',
@@ -37,16 +41,20 @@ test.before(async (t) => {
   t.context.loginResult = await adminClient.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(q, t.context.testName, t.context.databaseClients.parentClient)
 })
 
-test(testName + ': we are able to refresh access tokens by using the refresh token', async t => {
-  t.plan(6)
+test(path.basename(__filename) + ': we are able to refresh access tokens by using the refresh token', async t => {
+  t.plan(10)
   const adminClient = t.context.databaseClients.childClient
+  // initially we have 1 token of each type from the login.
+  await verifyTokens(t, adminClient, { access: 1, refresh: 1 })
   const refreshClient = getClient(fauna, t.context.loginResult.tokens.refresh.secret)
   const refreshResult = await refreshClient.query(Call('refresh'))
+  // After the refresh we have 2 tokens of each kind.
+  await verifyTokens(t, adminClient, { access: 2, refresh: 2 })
   // We  successfully received a token
   t.truthy(refreshResult.tokens.access)
   t.truthy(refreshResult.tokens.refresh)
@@ -59,7 +67,7 @@ test(testName + ': we are able to refresh access tokens by using the refresh tok
   t.truthy(originalRefreshToken.data.used)
 })
 
-test(testName + ': we are able to refresh access tokens multiple times within the GRACE_PERIOD_SECONDS', async t => {
+test(path.basename(__filename) + ': we are able to refresh access tokens multiple times within the GRACE_PERIOD_SECONDS', async t => {
   t.plan(5)
   const refreshClient = getClient(fauna, t.context.loginResult.tokens.refresh.secret)
   const refreshResult = await refreshClient.query(Call('refresh'))
@@ -72,7 +80,7 @@ test(testName + ': we are able to refresh access tokens multiple times within th
   t.not(refreshResult2.tokens.access.secret, refreshResult3.tokens.access.secret)
 })
 
-test(testName + ': we are NOT able to refresh access tokens multiple times after the GRACE_PERIOD_SECONDS', async t => {
+test(path.basename(__filename) + ': we are NOT able to refresh access tokens multiple times after the GRACE_PERIOD_SECONDS', async t => {
   t.plan(7)
   const adminClient = t.context.databaseClients.childClient
 
@@ -96,4 +104,24 @@ test(testName + ': we are NOT able to refresh access tokens multiple times after
   // Two anomalies for this user are logged
   t.is(anomalies.data[0].data.account.id, t.context.loginResult.account.ref.id)
   t.is(anomalies.data[1].data.account.id, t.context.loginResult.account.ref.id)
+})
+
+test(path.basename(__filename) + ': When we refresh and call fauna in parallel we still get access', async t => {
+  t.plan(2)
+  // Silent refresh could cause our access token to get invalidated when the call is still in flight.
+  const adminClient = t.context.databaseClients.childClient
+  const loginResult = await adminClient.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
+  const refreshClient = getClient(fauna, loginResult.tokens.refresh.secret)
+  const loggedInClient = getClient(fauna, loginResult.tokens.access.secret)
+  const refreshResult = await refreshClient.query(Call('refresh'))
+
+  await t.notThrowsAsync(async () => {
+    await loggedInClient.query(Get(t.context.testDocumentRef))
+  })
+
+  // Use the new token
+  const loggedInClientAfterRefresh = getClient(fauna, refreshResult.tokens.access.secret)
+  await t.notThrowsAsync(async () => {
+    await loggedInClientAfterRefresh.query(Get(t.context.testDocumentRef))
+  })
 })

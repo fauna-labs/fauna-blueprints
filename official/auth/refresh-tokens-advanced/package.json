@@ -8,7 +8,8 @@
         ]
     },
     "scripts": {
-        "test": "ava -T 200s --fail-fast"
+        "test": "ava -T 200s --fail-fast",
+        "posttest": "npx rimraf fauna/temp"
     },
     "keywords": [
         "fauna",
@@ -22,7 +23,8 @@
         "dotenv": "^8.2.0",
         "esm": "^3.2.25",
         "fauna-schema-migrate": "^2.0.0",
-        "faunadb": "^4.1.1"
+        "faunadb": "^4.1.1",
+        "rimraf": "^3.0.2"
     },
     "dependencies": {
         "shelljs": "^0.8.4"

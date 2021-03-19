@@ -1,5 +1,5 @@
 import test from 'ava'
-import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
 import { delay } from './helpers/_delay'
 const q = fauna.query
@@ -30,7 +30,6 @@ test.before(async (t) => {
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
   await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
-  await deleteMigrationDir()
 })
 
 test(testName + ': within 10 seconds (ttl of access token), we can access data via the test membership role', async t => {

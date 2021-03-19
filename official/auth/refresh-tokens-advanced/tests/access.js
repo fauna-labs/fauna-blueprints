@@ -7,14 +7,12 @@ const q = fauna.query
 const { Call, Create, Collection, Get, Paginate, Documents } = q
 
 const testName = path.basename(__filename)
-let databaseClients = { parentClient: null, childClient: null }
-let testDocumentRef = null
 
 test.before(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
-  databaseClients = await setupTestDatabase(fauna, testName)
-  const client = databaseClients.childClient
+  t.context.databaseClients = await setupTestDatabase(fauna, testName)
+  const client = t.context.databaseClients.childClient
   await populateDatabaseSchemaFromFiles(q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/functions/register.fql',
@@ -25,30 +23,30 @@ test.before(async (t) => {
     'tests/resources/functions/_login-modified.js'
   ])
   // create some data in the test collection
-  testDocumentRef = (await client.query(Create(Collection('dinos'), { data: { hello: 'world' } }))).ref
+  t.context.testDocumentRef = (await client.query(Create(Collection('dinos'), { data: { hello: 'world' } }))).ref
   // and register a user
   await client.query(Call('register', 'brecht@brechtsdomain.be', 'verysecure'))
 })
 
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(q, testName, databaseClients.parentClient)
+  await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
 })
 
 test(testName + ': within 10 seconds (ttl of access token), we can access data via the test membership role', async t => {
   t.plan(2)
-  const client = databaseClients.childClient
+  const client = t.context.databaseClients.childClient
   const loginResult = await client.query(Call('login-modified', 'brecht@brechtsdomain.be', 'verysecure'))
   const accessToken = loginResult.tokens.access.secret
   const loggedInClient = getClient(fauna, accessToken)
-  const doc = await loggedInClient.query(Get(testDocumentRef))
+  const doc = await loggedInClient.query(Get(t.context.testDocumentRef))
   t.truthy(doc.data)
   t.is(doc.data.hello, 'world')
 })
 
 test(testName + ': after 10 seconds (ttl of access token), we can no longer access data', async t => {
   t.plan(3)
-  const client = databaseClients.childClient
+  const client = t.context.databaseClients.childClient
   const loginResult = await client.query(Call('login-modified', 'brecht@brechtsdomain.be', 'verysecure'))
 
   const accessToken = loginResult.tokens.access.secret
@@ -58,7 +56,7 @@ test(testName + ': after 10 seconds (ttl of access token), we can no longer acce
 
   // we can no longer get the document with this token
   await t.throwsAsync(async () => {
-    await loggedInClient.query(Get(testDocumentRef))
+    await loggedInClient.query(Get(t.context.testDocumentRef))
   }, { instanceOf: fauna.errors.Unauthorized })
 
   // nor can we paginate the collection
@@ -74,10 +72,10 @@ test(testName + ': after 10 seconds (ttl of access token), we can no longer acce
 
 test(testName + ': refresh tokens do not provide access to the data', async t => {
   await t.throwsAsync(async () => {
-    const client = databaseClients.childClient
+    const client = t.context.databaseClients.childClient
     const loginResult = await client.query(Call('login-modified', 'brecht@brechtsdomain.be', 'verysecure'))
     const refreshToken = loginResult.tokens.refresh.secret
     const refreshClient = getClient(fauna, refreshToken)
-    await refreshClient.query(Get(testDocumentRef))
+    await refreshClient.query(Get(t.context.testDocumentRef))
   }, { instanceOf: fauna.errors.PermissionDenied })
 })

@@ -8,7 +8,8 @@
     ]
   },
   "scripts": {
-    "test": "ava -T 200s --fail-fast"
+    "test": "ava -T 200s --fail-fast",
+    "posttest": "npx rimraf fauna/temp"
   },
   "keywords": [
     "fauna",

@@ -1,5 +1,5 @@
 import faunadb from 'faunadb'
-import { CreateAccessAndRefreshToken, InvalidateAccessAndRefreshToken } from './tokens'
+import { CreateAccessAndRefreshToken, InvalidateRefreshToken } from './tokens'
 import { LogRefreshTokenReuseAnomaly } from './anomalies'
 
 const q = faunadb.query
@@ -67,7 +67,7 @@ export function GetAgeOfRefreshToken () {
 
 function RotateAccessAndRefreshToken (refreshTokenRef) {
   return Do(
-    InvalidateAccessAndRefreshToken(refreshTokenRef),
+    InvalidateRefreshToken(refreshTokenRef),
     CreateAccessAndRefreshToken(CurrentIdentity())
   )
 }

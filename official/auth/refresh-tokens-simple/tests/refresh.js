@@ -1,7 +1,7 @@
 import test from 'ava'
 import path from 'path'
 import * as fauna from 'faunadb'
-import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 const q = fauna.query
 const { Call, Create, Collection } = q
 
@@ -34,7 +34,6 @@ test.before(async (t) => {
 test.after(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
   await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
-  await deleteMigrationDir()
 })
 
 test(testName + ': we are able to refresh access tokens by using the refresh token', async t => {

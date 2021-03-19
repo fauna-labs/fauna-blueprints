@@ -7,6 +7,7 @@ const q = fauna.query
 const { Call, Create, Collection, Get } = q
 
 let index = 0
+
 test.beforeEach(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.

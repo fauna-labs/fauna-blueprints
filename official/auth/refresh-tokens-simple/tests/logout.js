@@ -1,16 +1,13 @@
 import test from 'ava'
 import path from 'path'
 import * as fauna from 'faunadb'
-import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles, deleteMigrationDir } from '../../../../util/helpers/setup-db'
+import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import { verifyTokens } from './helpers/_test-extensions'
 const q = fauna.query
 const { Call, Create, Collection, Get } = q
 
 let index = 0
 
-test.after(async (t) => {
-  await deleteMigrationDir()
-})
 test.beforeEach(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
