@@ -1,4 +1,5 @@
 import faunadb, { If } from 'faunadb'
+import { LogAnomaly, REFRESH_TOKEN_EXPIRED, REFRESH_TOKEN_REUSE_ERROR, REFRESH_TOKEN_USED_AFTER_LOGOUT } from './anomalies'
 
 const q = faunadb.query
 const {
@@ -20,13 +21,25 @@ const {
   NewId,
   Do,
   Delete,
-  And
+  And,
+  GT,
+  CurrentIdentity,
+  Not
 } = q
 
 export const ACCESS_TOKEN_LIFETIME_SECONDS = 600 // 10 minutes
-export const RESET_TOKEN_LIFETIME_SECONDS = 1800 // 30 minutes
+// lifetome of the token makes the refresh token unusable after this lifetime since
+// the code explicitely checks that lifetime before allowing a refresh token to refresh.
 export const REFRESH_TOKEN_LIFETIME_SECONDS = 28800 // 8 hours
+// reclaim time deletes the token which makes it unable to detect leaked tokens.
+// which is why it is set rather high.
+export const REFRESH_TOKEN_RECLAIMTIME_SECONDS = 604800 // 1 week
+// when a refresh token is refreshed itself, allow a grace period to make sure parallel requests work.
+export const GRACE_PERIOD_SECONDS = 20
 
+/********************************************
+  Creation of tokens
+ ********************************************/
 export function CreateAccessToken (accountRef, refreshTokenRef, ttlSeconds) {
   return Create(Tokens(), {
     instance: accountRef,
@@ -43,17 +56,31 @@ export function CreateAccessToken (accountRef, refreshTokenRef, ttlSeconds) {
   })
 }
 
-export function CreateRefreshToken (accountRef, ttlSeconds) {
+export function CreateRefreshToken (accountRef, lifetimeSeconds, reclaimtimeSeconds) {
   return Create(Tokens(), {
     instance: accountRef,
     data: {
       type: 'refresh',
       used: false,
-      sessionId: CreateOrReuseId()
+      sessionId: CreateOrReuseId(),
+      validUntil: TimeAdd(Now(), lifetimeSeconds || REFRESH_TOKEN_LIFETIME_SECONDS, 'seconds'),
+      loggedOut: false
     },
-    // 8 hours is a good time for refresh tokens.
-    ttl: TimeAdd(Now(), ttlSeconds || REFRESH_TOKEN_LIFETIME_SECONDS, 'seconds')
+    ttl: TimeAdd(Now(), reclaimtimeSeconds || REFRESH_TOKEN_RECLAIMTIME_SECONDS, 'seconds')
   })
+}
+
+export function CreateAccessAndRefreshToken (instance, accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds) {
+  return Let(
+    {
+      refresh: CreateRefreshToken(instance, refreshLifetimeSeconds, refreshReclaimtimeSeconds),
+      access: CreateAccessToken(instance, Select(['ref'], Var('refresh')), accessTtlSeconds)
+    },
+    {
+      refresh: Var('refresh'),
+      access: Var('access')
+    }
+  )
 }
 
 function CreateOrReuseId () {
@@ -68,21 +95,69 @@ export function GetSessionId () {
   return Select(['data', 'sessionId'], Get(CurrentToken()))
 }
 
-export function CreateAccessAndRefreshToken (instance, accessTtlSeconds, refreshTtlSeconds) {
-  return Let(
-    {
-      refresh: CreateRefreshToken(instance, refreshTtlSeconds),
-      access: CreateAccessToken(instance, Select(['ref'], Var('refresh')), accessTtlSeconds)
-    },
-    {
-      refresh: Var('refresh'),
-      access: Var('access')
-    }
+export function RotateAccessAndRefreshToken (gracePeriodSeconds, accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds) {
+  return Do(
+    InvalidateRefreshToken(CurrentToken(), gracePeriodSeconds),
+    CreateAccessAndRefreshToken(CurrentIdentity(), accessTtlSeconds, refreshLifetimeSeconds, refreshReclaimtimeSeconds)
   )
 }
 
-export function InvalidateRefreshToken (refreshTokenRef) {
-  return Update(refreshTokenRef, { data: { used: true, timeUsed: Now() } })
+/********************************************
+  Verification of tokens and/or verify validity of tokens
+ ********************************************/
+export function IsCalledWithAccessToken () {
+  return And(
+    HasCurrentToken(),
+    Equals(Select(['data', 'type'], Get(CurrentToken()), false), 'access')
+  )
+}
+
+export function IsCalledWithRefreshToken () {
+  return And(
+    HasCurrentToken(),
+    Equals(Select(['data', 'type'], Get(CurrentToken()), false), 'refresh')
+  )
+}
+
+export function VerifyRefreshToken (fqlStatementOnSuccessfulVerification, action) {
+  return If(And(IsTokenUsed(), Not(IsWithinGracePeriod())),
+    LogAnomaly(REFRESH_TOKEN_REUSE_ERROR, action),
+    If(IsTokenStillValid(),
+      If(Not(IsTokenLoggedOut()),
+        fqlStatementOnSuccessfulVerification,
+        LogAnomaly(REFRESH_TOKEN_USED_AFTER_LOGOUT, action)
+      ),
+      LogAnomaly(REFRESH_TOKEN_EXPIRED, action)
+    )
+  )
+}
+
+export function IsTokenLoggedOut () {
+  return Select(['data', 'loggedOut'], Get(CurrentToken()))
+}
+
+export function IsTokenUsed () {
+  return Select(['data', 'used'], Get(CurrentToken()))
+}
+
+export function IsTokenStillValid () {
+  return GT(Select(['data', 'validUntil'], Get(CurrentToken())), Now())
+}
+
+function IsWithinGracePeriod () {
+  return GT(Select(['data', 'gracePeriodUntil'], Get(CurrentToken())), Now())
+}
+
+/********************************************
+  Invalidate/Delete/Logout of tokens
+ ********************************************/
+export function InvalidateRefreshToken (refreshTokenRef, gracePeriodSeconds) {
+  return Update(refreshTokenRef, {
+    data: {
+      used: true,
+      gracePeriodUntil: TimeAdd(Now(), gracePeriodSeconds || GRACE_PERIOD_SECONDS, 'seconds')
+    }
+  })
 }
 
 function InvalidateAccessToken (refreshTokenRef) {
@@ -93,20 +168,13 @@ function InvalidateAccessToken (refreshTokenRef) {
   )
 }
 
+function LogoutRefreshToken (refreshTokenRef) {
+  return Update(refreshTokenRef, { data: { loggedOut: true } })
+}
+
 export function LogoutAccessAndRefreshToken (refreshTokenRef) {
   return Do(
     InvalidateAccessToken(refreshTokenRef),
-    Delete(refreshTokenRef)
-  )
-}
-
-export function IsCalledWithAccessToken () {
-  return Equals(Select(['data', 'type'], Get(CurrentToken()), false), 'access')
-}
-
-export function IsCalledWithRefreshToken () {
-  return And(
-    HasCurrentToken(),
-    Equals(Select(['data', 'type'], Get(CurrentToken()), false), 'refresh')
+    LogoutRefreshToken(refreshTokenRef)
   )
 }

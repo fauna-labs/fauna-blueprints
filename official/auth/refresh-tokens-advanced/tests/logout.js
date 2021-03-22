@@ -1,8 +1,9 @@
 import test from 'ava'
 import path from 'path'
 import * as fauna from 'faunadb'
-import { verifyTokens } from './helpers/_test-extensions'
+import { verifyRefreshTokensLogout, verifyTokens } from './helpers/_test-extensions'
 import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
+import { REFRESH_TOKEN_USED_AFTER_LOGOUT } from '../fauna/src/anomalies'
 const q = fauna.query
 const { Call, Create, Collection, Get } = q
 
@@ -24,8 +25,8 @@ test.beforeEach(async (t) => {
     'fauna/resources/functions/logout.js',
     'fauna/resources/indexes/access-token-by-refresh-token.fql',
     'fauna/resources/indexes/accounts-by-email.fql',
-    'fauna/resources/indexes/tokens-by-instance-sessionid-type-and-used.fql',
-    'fauna/resources/indexes/tokens-by-instance-type-and-used.fql',
+    'fauna/resources/indexes/tokens-by-instance-sessionid-type-and-loggedout.fql',
+    'fauna/resources/indexes/tokens-by-instance-type-and-loggedout.fql',
     'fauna/resources/roles/loggedin.js',
     'fauna/resources/roles/refresh.js'
   ])
@@ -45,7 +46,7 @@ test.afterEach(async (t) => {
 })
 
 test(path.basename(__filename) + ': Logging out with all=false only logs out the current session', async t => {
-  t.plan(10)
+  t.plan(11)
   const client = t.context.databaseClients.childClient
 
   const loginResultBrecht1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
@@ -66,9 +67,10 @@ test(path.basename(__filename) + ': Logging out with all=false only logs out the
   // We log out
   const refreshClientBrecht1 = getClient(fauna, loginResultBrecht1.tokens.refresh.secret)
   await refreshClientBrecht1.query(Call('logout', false))
-  // After logging out, we only have 2 access and refresh tokens, since we passed in false, other tokens from
-  // this account are not impacted.
-  await verifyTokens(t, client, { access: 2, refresh: 2 })
+  // After logging out, we only have 2 access tokens, since we passed in fasle other tokens from
+  // this account are not impacted. Refresh tokens remain but are set to loggedOut.
+  await verifyTokens(t, client, { access: 2, refresh: 3 })
+  await verifyRefreshTokensLogout(t, client, 1)
 
   // We can no longer fetch the data.
   await t.throwsAsync(async () => {
@@ -80,7 +82,7 @@ test(path.basename(__filename) + ': Logging out with all=false only logs out the
 })
 
 test(path.basename(__filename) + ': Logging out with all=true logs out all sessions for that account', async t => {
-  t.plan(10)
+  t.plan(11)
   const client = t.context.databaseClients.childClient
   const loginResultBrecht1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
   const loginResultBrecht2 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
@@ -99,7 +101,9 @@ test(path.basename(__filename) + ': Logging out with all=true logs out all sessi
   // We log out
   const refreshClientBrecht1 = getClient(fauna, loginResultBrecht1.tokens.refresh.secret)
   await refreshClientBrecht1.query(Call('logout', true))
-  await verifyTokens(t, client, { access: 1, refresh: 1 })
+  // access tokens are gone, refresh tokens are set to logged out.
+  await verifyTokens(t, client, { access: 1, refresh: 3 })
+  await verifyRefreshTokensLogout(t, client, 2)
 
   // We can no longer fetch the data.
   await t.throwsAsync(async () => {
@@ -110,4 +114,19 @@ test(path.basename(__filename) + ': Logging out with all=true logs out all sessi
   }, { instanceOf: fauna.errors.Unauthorized })
   // But clients from other users are not impacted
   t.truthy((await loggedInClientJef.query(Get(t.context.testDocumentRef))).data)
+})
+
+test(path.basename(__filename) + ': Logged out refresh tokens can no longer be used to refresh/logout', async t => {
+  t.plan(2)
+  const client = t.context.databaseClients.childClient
+  const loginResultBrecht1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
+  const refreshClient = getClient(fauna, loginResultBrecht1.tokens.refresh.secret)
+  // We log out
+  await refreshClient.query(Call('logout', true))
+  // we can no longer refresh nor logout
+  const logout = await refreshClient.query(Call('logout', true))
+  const refresh = await refreshClient.query(Call('logout', true))
+
+  t.deepEqual(logout, REFRESH_TOKEN_USED_AFTER_LOGOUT)
+  t.deepEqual(refresh, REFRESH_TOKEN_USED_AFTER_LOGOUT)
 })

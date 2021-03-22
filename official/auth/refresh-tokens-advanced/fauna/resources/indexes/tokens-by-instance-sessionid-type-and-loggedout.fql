@@ -1,5 +1,5 @@
 CreateIndex({
-  name: 'tokens_by_instance_sessionid_type_and_used',
+  name: 'tokens_by_instance_sessionid_type_and_loggedout',
   source: Tokens(),
   terms: [
     {
@@ -12,7 +12,7 @@ CreateIndex({
       field: ['data', 'type']
     },
     {
-      field: ['data', 'used']
+      field: ['data', 'loggedOut']
     }
   ],
   serialized: true

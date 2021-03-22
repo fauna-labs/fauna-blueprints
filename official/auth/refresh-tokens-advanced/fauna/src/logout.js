@@ -1,16 +1,16 @@
 import faunadb from 'faunadb'
-import { GetSessionId, LogoutAccessAndRefreshToken } from './tokens'
+import { GetSessionId, LogoutAccessAndRefreshToken, VerifyRefreshToken } from './tokens'
 
 const q = faunadb.query
 const { Let, Var, Lambda, Match, CurrentIdentity, Index, If, Paginate } = q
 
 // Logout is called with the refresh token.
 export function Logout (all) {
-  return If(
+  return VerifyRefreshToken(If(
     all,
     LogoutAll(),
     LogoutOne()
-  )
+  ), 'logout')
 }
 
 // Logout the access and refresh token for the refresh token provided (which corresponds to one browser)
@@ -19,7 +19,7 @@ function LogoutOne () {
     {
       refreshTokens: Paginate(
         Match(
-          Index('tokens_by_instance_sessionid_type_and_used'),
+          Index('tokens_by_instance_sessionid_type_and_loggedout'),
           CurrentIdentity(), GetSessionId(), 'refresh', false
         ), { size: 100000 })
     },
@@ -32,7 +32,9 @@ function LogoutAll () {
   return Let(
     {
       refreshTokens: Paginate(
-        Match(Index('tokens_by_instance_type_and_used'), CurrentIdentity(), 'refresh', false),
+        Match(
+          Index('tokens_by_instance_type_and_loggedout'),
+          CurrentIdentity(), 'refresh', false),
         { size: 100000 }
       )
     },
