@@ -1,12 +1,11 @@
 import path from 'path'
 import fs from 'fs'
-import * as schemaMigrate from 'fauna-schema-migrate'
 import shell from 'shelljs'
 
 const fullPath = path.resolve(process.cwd(), '.env.' + process.env.NODE_ENV)
 const config = require('dotenv').config({ path: fullPath })
 
-export const populateDatabaseSchemaFromFiles = async (q, childClient, paths) => {
+export const populateDatabaseSchemaFromFiles = async (schemaMigrate, q, childClient, paths) => {
   const snippets = await schemaMigrate.getSnippetsFromPaths(paths)
   const emptySnippets = schemaMigrate.getSnippetsFromStrings([])
   const diff = schemaMigrate.diffSnippets(emptySnippets, snippets)

@@ -1,6 +1,7 @@
 import test from 'ava'
 import { destroyTestDatabase, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
+import * as schemaMigrate from 'fauna-schema-migrate'
 const q = fauna.query
 const { Call, Paginate, Documents, Collection, Lambda, Get } = q
 
@@ -12,7 +13,7 @@ test.before(async (t) => {
   databaseClients = await setupTestDatabase(fauna, testName)
 })
 
-test.after(async (t) => {
+test.after.always(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
   await destroyTestDatabase(q, testName, databaseClients.parentClient)
 })
@@ -21,7 +22,7 @@ test(testName + ': verify account was created', async t => {
   t.plan(2)
   const client = databaseClients.childClient
   // Populate the schema on the child database.
-  await populateDatabaseSchemaFromFiles(q, client, [
+  await populateDatabaseSchemaFromFiles(schemaMigrate, q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/functions/register.fql'
   ])

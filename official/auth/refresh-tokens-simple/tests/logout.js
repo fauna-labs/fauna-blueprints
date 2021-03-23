@@ -1,6 +1,7 @@
 import test from 'ava'
 import path from 'path'
 import * as fauna from 'faunadb'
+import * as schemaMigrate from 'fauna-schema-migrate'
 import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import { verifyTokens } from './helpers/_test-extensions'
 const q = fauna.query
@@ -14,7 +15,7 @@ test.beforeEach(async (t) => {
   const testName = path.basename(__filename) + (index = ++index)
   const databaseClients = await setupTestDatabase(fauna, testName)
   const adminClient = databaseClients.childClient
-  await populateDatabaseSchemaFromFiles(q, adminClient, [
+  await populateDatabaseSchemaFromFiles(schemaMigrate, q, adminClient, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/collections/anomalies.fql',
     'fauna/resources/collections/dinos.fql',
@@ -38,7 +39,7 @@ test.beforeEach(async (t) => {
   t.context.testName = testName
 })
 
-test.afterEach(async (t) => {
+test.afterEach.always(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
   await destroyTestDatabase(q, t.context.testName, t.context.databaseClients.parentClient)
 })
