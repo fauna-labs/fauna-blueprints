@@ -15,5 +15,5 @@ Although Fauna provides a built-in [Login](https://docs.fauna.com/fauna/current/
 
 #### Setup:
 
-
+The resources in such a blueprint are ready to be loaded in your database with a few commands. Please refer to the [setup section in the main README](https://github.com/fauna-brecht/fauna-blueprints/blob/main/README.md#set-up-a-blueprint) to learn how to load the resources into your database. 
 
