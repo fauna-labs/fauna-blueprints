@@ -1,16 +1,21 @@
 import test from 'ava'
+import path from 'path'
 import { destroyTestDatabase, getClient, setupTestDatabase, populateDatabaseSchemaFromFiles } from '../../../../util/helpers/setup-db'
 import * as fauna from 'faunadb'
 import * as schemaMigrate from 'fauna-schema-migrate'
 const q = fauna.query
 const { Call, Create, Collection, Get } = q
 
-const testName = 'logout'
-test.before(async (t) => {
+let index = 0
+
+test.beforeEach(async (t) => {
   // Set up the child database and retrieve both a fauna Client
   // to query the database as parent database.
-  t.context.databaseClients = await setupTestDatabase(fauna, testName)
+  t.context.testName = path.basename(__filename) + (index = ++index)
+  t.context.databaseClients = await setupTestDatabase(fauna, t.context.testName)
   const client = t.context.databaseClients.childClient
+  // Set up the child database and retrieve both a fauna Client
+  // to query the database as parent database.
   await populateDatabaseSchemaFromFiles(schemaMigrate, q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/collections/dinos.fql',
@@ -24,12 +29,12 @@ test.before(async (t) => {
   await client.query(Call('register', 'brecht@brechtsdomain.be', 'verysecure'))
 })
 
-test.after.always(async (t) => {
+test.afterEach.always(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(q, testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(q, t.context.testName, t.context.databaseClients.parentClient)
 })
 
-test(testName + ': we can logout one token of a specific user', async t => {
+test(path.basename(__filename) + ': we can logout one token of a specific user', async t => {
   t.plan(4)
   const client = t.context.databaseClients.childClient
   const loginResult1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
@@ -54,7 +59,7 @@ test(testName + ': we can logout one token of a specific user', async t => {
   }, { instanceOf: fauna.errors.Unauthorized })
 })
 
-test(testName + ': we can logout all tokens of a specific user', async t => {
+test(path.basename(__filename) + ': we can logout all tokens of a specific user', async t => {
   t.plan(4)
   const client = t.context.databaseClients.childClient
   const loginResult1 = await client.query(Call('login', 'brecht@brechtsdomain.be', 'verysecure'))
