@@ -1,4 +1,4 @@
-import faunadb, { CurrentIdentity } from 'faunadb'
+import faunadb from 'faunadb'
 
 const q = faunadb.query
 const {
