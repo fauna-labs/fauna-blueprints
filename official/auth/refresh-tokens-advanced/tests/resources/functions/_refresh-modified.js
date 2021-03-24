@@ -3,7 +3,7 @@ import { RefreshToken } from '../../../fauna/src/refresh'
 export const GRACE_PERIOD_SECONDS = 3
 export const ACCESS_TOKEN_LIFETIME_SECONDS = 5
 export const REFRESH_TOKEN_LIFETIME_SECONDS = 8
-export const REFRESH_TOKEN_RECLAIMTIME_SECONDS = 12
+export const REFRESH_TOKEN_RECLAIMTIME_SECONDS = 15
 
 const q = faunadb.query
 const {
