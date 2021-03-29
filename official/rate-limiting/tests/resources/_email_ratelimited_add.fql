@@ -1,0 +1,10 @@
+CreateFunction({
+  name: 'email_ratelimited_add',
+  body: Query(Lambda([],
+    Do(
+      Call('ratelimit', 'add', 'brecht@test.com', 3, 1000),
+      Add(2, 2)
+    )
+  )),
+  role: 'server'
+})

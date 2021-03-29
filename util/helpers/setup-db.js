@@ -84,11 +84,12 @@ export const cleanUpChildDbKeys = (q, testName) => {
   )
 }
 
-export const getClient = (fauna, secret) => {
+export const getClient = (fauna, secret, observer) => {
   const opts = { secret: secret }
   if (process.env.FAUNADB_DOMAIN) opts.domain = process.env.FAUNADB_DOMAIN
   if (process.env.FAUNADB_SCHEME) opts.scheme = process.env.FAUNADB_SCHEME
   opts.queryTimeout = 600 * 1000
+  opts.observer = observer
   const client = new fauna.Client(opts)
   return client
 }

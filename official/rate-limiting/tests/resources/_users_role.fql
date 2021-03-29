@@ -1,0 +1,30 @@
+CreateRole({
+  name: 'loggedin',
+  membership: [
+    {
+      // The accounts collection gets access
+      resource: Collection('users')
+    }
+  ],
+  privileges: [
+    {
+      resource: Collection('access_logs'),
+      actions: {
+        read: true,
+        create: true
+      }
+    },
+    {
+      resource: Index('access_logs_by_action_and_identity_ordered_by_ts'),
+      actions: {
+        read: true
+      }
+    },
+    {
+      resource: Function('ratelimit'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

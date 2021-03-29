@@ -1,0 +1,27 @@
+{
+    "name": "rate-limiting",
+    "version": "1.0.0",
+    "description": "From this blueprint you can learn how to limit the amount of calls in a given timeframe for a specific identity",
+    "ava": {
+        "require": [
+            "esm"
+        ]
+    },
+    "scripts": {
+        "test": "ava -T 200s --fail-fast"
+    },
+    "keywords": [
+        "fauna",
+        "auth",
+        "fql"
+    ],
+    "author": "brecht.derooms@fauna.com",
+    "license": "0BSD",
+    "devDependencies": {
+        "ava": "^3.15.0",
+        "dotenv": "^8.2.0",
+        "esm": "^3.2.25",
+        "fauna-schema-migrate": "^2.0.0",
+        "faunadb": "^4.1.1"
+    }
+}

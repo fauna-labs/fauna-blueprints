@@ -1,0 +1,1 @@
+CreateCollection({ name: 'access_logs', ttl_days: 10 })

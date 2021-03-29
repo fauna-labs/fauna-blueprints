@@ -1,0 +1,18 @@
+CreateIndex({
+  name: 'access_logs_by_action_and_identity_ordered_by_ts',
+  source: Collection('access_logs'),
+  terms: [
+    {
+      field: ['data', 'action']
+    },
+    {
+      field: ['data', 'identity']
+    }
+  ],
+  values: [
+    {
+      field: ['ts'],
+      reverse: true
+    }
+  ]
+})
