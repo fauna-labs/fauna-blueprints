@@ -87,6 +87,8 @@ To contribute a blueprint, you first need to set up a new folder. That folder wi
 
 - [x] **Configure and install libraries:** the package.json name/description/author as desired, ideally keeping the minimum library configuration and run `npm install` to install the libraries. 
 
+- [x] **Configure the paths of the test imports:** depending on where you placed the blueprint, you might need to adapt some imports. 
+
 - [x] **Code:** add the resources you want to share in the '**fauna/resources**' folder either in pure .fql files or .js/.ts files with a default export. Take a look at the [fauna-schema-migrate](https://github.com/fauna-brecht/fauna-schema-migrate) README to read more about the input it accepts. 
 
 #### 2. Test your code

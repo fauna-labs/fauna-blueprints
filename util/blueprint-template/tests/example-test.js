@@ -1,21 +1,22 @@
 import test from 'ava'
 import path from 'path'
+import fauna from 'faunadb'
 import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir } from '../../../helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
-
-const testName = path.basename(__filename)
 
 test.after.always(async (t) => {
   await deleteMigrationDir()
 })
 
+let index = 0
 test.beforeEach(async (t) => {
+  t.context.testName = path.basename(__filename) + (index = ++index)
   // Set up a child database in before or beforeAll and receive a client to the child database
   // as well as a client to the parent database.
-  t.context.databaseClients = await setupTestDatabase(testName)
+  t.context.databaseClients = await setupTestDatabase(fauna, t.context.testName)
   const client = t.context.databaseClients.childClient
   // initialize your database with resources.
-  await populateDatabaseSchemaFromFiles(schemaMigrate, client, [
+  await populateDatabaseSchemaFromFiles(schemaMigrate, fauna.query, client, [
     // resources of the blueprint
     'fauna/resources/<your resource>.fql',
     // custom test resources specific to the test
@@ -27,10 +28,10 @@ test.beforeEach(async (t) => {
 
 test.afterEach.always(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(fauna.query, t.context.testName, t.context.databaseClients.parentClient)
 })
 
-test(testName + ': things your test does', async t => {
+test(path.basename(__filename) + ': things your test does', async t => {
   // define the amount of tests
   t.plan(2)
 

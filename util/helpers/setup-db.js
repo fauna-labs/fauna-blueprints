@@ -88,6 +88,7 @@ export const getClient = (fauna, secret) => {
   const opts = { secret: secret }
   if (process.env.FAUNADB_DOMAIN) opts.domain = process.env.FAUNADB_DOMAIN
   if (process.env.FAUNADB_SCHEME) opts.scheme = process.env.FAUNADB_SCHEME
+  opts.queryTimeout = 600 * 1000
   const client = new fauna.Client(opts)
   return client
 }

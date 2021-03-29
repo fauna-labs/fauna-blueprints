@@ -1,6 +1,7 @@
 import test from 'ava'
 import path from 'path'
-import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir } from '../../../helpers/setup-db'
+import fauna from 'faunadb'
+import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir } from '../../../util/helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
 
 const testName = path.basename(__filename)
@@ -12,14 +13,13 @@ test.after.always(async (t) => {
 test.beforeEach(async (t) => {
   // Set up a child database in before or beforeAll and receive a client to the child database
   // as well as a client to the parent database.
-  t.context.databaseClients = await setupTestDatabase(testName)
+  t.context.databaseClients = await setupTestDatabase(fauna, testName)
   const client = t.context.databaseClients.childClient
   // initialize your database with resources.
-  await populateDatabaseSchemaFromFiles(schemaMigrate, client, [
-    // resources of the blueprint
-    'fauna/resources/<your resource>.fql',
-    // custom test resources specific to the test
-    'tests/resources/<your resource>.js'
+  await populateDatabaseSchemaFromFiles(schemaMigrate, fauna.query, client, [
+    'fauna/resources/access_logs.fql',
+    'fauna/resources/add_rate_limiting.js',
+    'fauna/resources/access_logs_by_action_and_identity_ordered_by_ts.fql'
   ])
   // create some data in case necessary collection, store it in the context.
   t.context.someTestData = 'somedata'
@@ -27,7 +27,7 @@ test.beforeEach(async (t) => {
 
 test.afterEach.always(async (t) => {
   // Destroy the child database to clean up (using the parentClient)
-  await destroyTestDatabase(testName, t.context.databaseClients.parentClient)
+  await destroyTestDatabase(fauna.query, testName, t.context.databaseClients.parentClient)
 })
 
 test(testName + ': things your test does', async t => {

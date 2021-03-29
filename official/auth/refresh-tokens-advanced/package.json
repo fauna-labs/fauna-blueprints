@@ -1,5 +1,5 @@
 {
-    "name": "register-login",
+    "name": "refresh-token-advanced",
     "version": "1.0.0",
     "description": "A simple register login implementation ",
     "ava": {
