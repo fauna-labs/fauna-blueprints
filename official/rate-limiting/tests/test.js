@@ -130,6 +130,7 @@ test(path.basename(__filename) + ': ratelimiting reduces the cost of read operat
   const loggedInClient1 = getClient(fauna, token1.secret, (result) => {
     const readOps = parseInt(result.responseHeaders['x-byte-read-ops'])
     if (i === 0) {
+      // The amount of read ops is not correct atm, should be > 10 and > 0
       t.is(readOps, 9)
     } else if (i === 1) {
       t.is(readOps, 9)
