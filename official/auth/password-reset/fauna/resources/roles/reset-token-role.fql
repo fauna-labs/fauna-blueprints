@@ -1,0 +1,19 @@
+
+CreateRole({
+  name: 'reset-token-role',
+  membership: [
+    {
+      // The password_reset_request collection gets access
+      resource: Collection('password_reset_request')
+    }
+  ],
+  privileges: [
+    // A reset token can only reset
+    {
+      resource: q.Function('reset'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})
