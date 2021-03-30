@@ -1,15 +1,11 @@
 import test from 'ava'
 import path from 'path'
 import fauna, { Get } from 'faunadb'
-import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir, getClient } from '../../../util/helpers/setup-db'
+import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, getClient } from '../../../util/helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
 import { delay } from './helpers/_delay'
 const q = fauna.query
 const { Call, Do, Add, CurrentIdentity, Create, Collection, Tokens, Lambda, Paginate, Documents } = q
-
-test.after.always(async (t) => {
-  await deleteMigrationDir()
-})
 
 let index = 0
 test.beforeEach(async (t) => {
