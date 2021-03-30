@@ -16,6 +16,7 @@ test.beforeEach(async (t) => {
   await populateDatabaseSchemaFromFiles(schemaMigrate, q, client, [
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/functions/register.fql',
+    'fauna/resources/functions/login.js',
     'fauna/resources/roles/public.fql'
   ])
 })
