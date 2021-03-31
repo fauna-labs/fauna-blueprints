@@ -1,15 +1,23 @@
 import test from 'ava'
 import path from 'path'
 import fauna, { Get } from 'faunadb'
-import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir, getClient } from '../../../util/helpers/setup-db'
+import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, getClient } from '../../../util/helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
 import { delay } from './helpers/_delay'
 const q = fauna.query
 const { Call, Do, Add, CurrentIdentity, Create, Collection, Tokens, Lambda, Paginate, Documents } = q
 
-test.after.always(async (t) => {
-  await deleteMigrationDir()
-})
+// DISCLAIMER
+// In theory this test can fail since the index uses is not serializable.
+// Not serializable is the right choice for this though since else there could be contention on
+// rate-limiting implementations that are not scoped to a narrow action or user.
+//
+// This becomes relevant in case you have set rate-limiting relatively high and:
+// - many calls would happen from one user on the same action
+// - the action/identity is not narrowly scoped (e.g. a 'register' action with a string 'public' as identity).
+// Setting the index to serializability: false will remove the reads from the Optimistic Concurrency Check
+// which means reads might see outdated data. For rate-limiting it's generally fine if someone is able to do
+// one or two more calls than originally intended.
 
 let index = 0
 test.beforeEach(async (t) => {

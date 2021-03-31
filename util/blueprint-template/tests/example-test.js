@@ -1,12 +1,8 @@
 import test from 'ava'
 import path from 'path'
 import fauna from 'faunadb'
-import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir } from '../../../util/helpers/setup-db'
+import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase } from '../../../util/helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
-
-test.after.always(async (t) => {
-  await deleteMigrationDir()
-})
 
 let index = 0
 test.beforeEach(async (t) => {

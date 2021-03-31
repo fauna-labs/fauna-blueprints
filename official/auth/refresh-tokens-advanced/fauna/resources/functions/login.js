@@ -14,5 +14,5 @@ export default CreateFunction({
   body: Query(Lambda(['email', 'password'],
     LoginAccount(Var('email'), Var('password'))
   )),
-  role: 'server'
+  role: 'admin'
 })

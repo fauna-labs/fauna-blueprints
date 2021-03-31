@@ -126,7 +126,7 @@ test(path.basename(__filename) + ': Logged out refresh tokens can no longer be u
   await refreshClient.query(Call('logout', true))
   // we can no longer refresh nor logout
   const logout = await refreshClient.query(Call('logout', true))
-  const refresh = await refreshClient.query(Call('logout', true))
+  const refresh = await refreshClient.query(Call('refresh'))
 
   t.deepEqual(logout, REFRESH_TOKEN_USED_AFTER_LOGOUT)
   t.deepEqual(refresh, REFRESH_TOKEN_USED_AFTER_LOGOUT)

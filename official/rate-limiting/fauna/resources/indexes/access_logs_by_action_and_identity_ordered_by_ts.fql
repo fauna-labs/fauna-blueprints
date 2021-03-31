@@ -14,5 +14,14 @@ CreateIndex({
       field: ['ts'],
       reverse: true
     }
-  ]
+  ],
+  // We set this index to serialized: false in order to reduce contention (and avoid TransactionAborted due to too many retries)
+  // This becomes relevant in case you have set rate-limiting relatively high and:
+  // - many calls would happen from one user on the same action
+  // - the action/identity is not narrowly scoped (e.g. a 'register' action with a string 'public' as identity).
+  // Setting the index to serializability: false will remove the reads from the Optimistic Concurrency Check
+  // which means reads might see outdated data. For rate-limiting it's generally fine if someone is able to do
+  // one or two more calls than originally intended. If you have very narrowly scoped rate-limiting (per user and low limits)
+  // and value correctness, you can opt to set it to true.
+  serialized: false
 })
