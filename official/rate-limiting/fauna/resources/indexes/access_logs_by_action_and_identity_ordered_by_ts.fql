@@ -14,5 +14,6 @@ CreateIndex({
       field: ['ts'],
       reverse: true
     }
-  ]
+  ],
+  serialized: false
 })

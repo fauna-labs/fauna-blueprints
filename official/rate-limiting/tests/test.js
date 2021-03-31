@@ -7,6 +7,11 @@ import { delay } from './helpers/_delay'
 const q = fauna.query
 const { Call, Do, Add, CurrentIdentity, Create, Collection, Tokens, Lambda, Paginate, Documents } = q
 
+// DISCLAIMER
+// In theory this test can fail since the index uses is not serializable.
+// Not serializable is the right choice for this though since else there could be contention on
+// rate-limiting implementations that are not scoped to a narrow action or user.
+
 let index = 0
 test.beforeEach(async (t) => {
   // Set up the child database and retrieve both a fauna Client
