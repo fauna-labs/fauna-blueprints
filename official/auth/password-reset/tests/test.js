@@ -1,11 +1,13 @@
 import test from 'ava'
 import path from 'path'
 import fauna from 'faunadb'
-import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir } from '../../../../util/helpers/setup-db'
+import { populateDatabaseSchemaFromFiles, destroyTestDatabase, setupTestDatabase, deleteMigrationDir, getClient } from '../../../../util/helpers/setup-db'
 import * as schemaMigrate from 'fauna-schema-migrate'
+import { delay } from './helpers/_delay'
+import { CUSTOM_PASSWORD_RESET_TIMEOUT } from './resources/_adapted-request-password-reset'
 
 const q = fauna.query
-const { Create, Collection, Identify, Call } = q
+const { Create, Collection, Identify, Call, Count, Tokens, Lambda, Get, Var } = q
 
 test.after.always(async (t) => {
   await deleteMigrationDir()
@@ -24,9 +26,11 @@ test.beforeEach(async (t) => {
     'fauna/resources/collections/accounts.fql',
     'fauna/resources/collections/password-reset-request.fql',
     'fauna/resources/indexes/accounts-by-email.fql',
-    'fauna/resources/indexes/password_reset_requests_by_account.fql',
+    'fauna/resources/indexes/password-reset-requests-by-account.fql',
+    'fauna/resources/indexes/tokens-by-instance.fql',
     'fauna/resources/functions/change-password.js',
-    'fauna/resources/functions/request-password-reset.js',
+    'fauna/resources/roles/reset-token-role.fql',
+    'fauna/resources/roles/public.fql',
     'tests/resources/_adapted-request-password-reset.js'
 
   ])
@@ -46,16 +50,64 @@ test.afterEach.always(async (t) => {
 
 test(path.basename(__filename) + ': We can ask a password reset token and use it', async t => {
   // define the amount of tests
-  t.plan(2)
+  t.plan(3)
 
   const client = t.context.databaseClients.childClient
-  const res = await client.query(Identify(t.context.accountRef, 'testtest'))
-  t.is(res, true)
+  const idRes1 = await client.query(Identify(t.context.accountRef, 'testtest'))
+  t.is(idRes1, true)
+  const idRes2 = await client.query(Identify(t.context.accountRef, 'newpassword'))
+  t.is(idRes2, false)
 
-  const resetResult = await client.query(Call('request-password-reset', 'brecht@brechtsdomain.com')
-  console.log(resetResult)
+  const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient = getClient(fauna, resetResult.secret)
+  await resetClient.query(Call('change_password', 'newpassword'))
+  const idRes3 = await client.query(Identify(t.context.accountRef, 'newpassword'))
+  t.is(idRes3, true)
+})
+
+test(path.basename(__filename) + ': After the given delay, reset tokens become unusable', async t => {
+  t.plan(1)
+  const client = t.context.databaseClients.childClient
+  const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient = getClient(fauna, resetResult.secret)
+  await delay(CUSTOM_PASSWORD_RESET_TIMEOUT * 1000 + 2000)
   await t.throwsAsync(async () => {
-    // do some call
-    throw new Error()
-  }, { instanceOf: Error })
+    await resetClient.query(Call('change_password', 'newpassword'))
+  }, { instanceOf: fauna.errors.Unauthorized })
+})
+
+test(path.basename(__filename) + ': Only one reset token per account exists', async t => {
+  t.plan(4)
+  const client = t.context.databaseClients.childClient
+  const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient = getClient(fauna, resetResult.secret)
+
+  let tokenCount = await client.query(Count(Tokens()))
+  t.is(tokenCount, 1)
+  const resetResult2 = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient2 = getClient(fauna, resetResult2.secret)
+
+  tokenCount = await client.query(Count(Tokens()))
+  t.is(tokenCount, 1)
+  await t.throwsAsync(async () => {
+    await resetClient.query(Call('change_password', 'newpassword'))
+  }, { instanceOf: fauna.errors.Unauthorized })
+
+  await resetClient2.query(Call('change_password', 'newpassword2'))
+  const idRes1 = await client.query(Identify(t.context.accountRef, 'newpassword2'))
+  t.is(idRes1, true)
+})
+
+test(path.basename(__filename) + ': A password reset token can only be used once', async t => {
+  t.plan(2)
+  const client = t.context.databaseClients.childClient
+  const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient = getClient(fauna, resetResult.secret)
+  await resetClient.query(Call('change_password', 'newpassword'))
+
+  await t.throwsAsync(async () => {
+    await resetClient.query(Call('change_password', 'newpassword2'))
+  }, { instanceOf: fauna.errors.Unauthorized })
+  const idRes1 = await client.query(Identify(t.context.accountRef, 'newpassword'))
+  t.is(idRes1, true)
 })

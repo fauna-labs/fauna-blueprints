@@ -10,7 +10,7 @@ const {
 } = q
 
 export default CreateFunction({
-  name: 'change-password',
+  name: 'change_password',
   body: Query(Lambda(['password'],
     ChangePassword(Var('password'))
   )),

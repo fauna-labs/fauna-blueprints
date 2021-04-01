@@ -10,9 +10,9 @@ const {
 } = q
 
 export default CreateFunction({
-  name: 'request-password-reset',
-  body: Query(Lambda(['email', 'lifetimeSecs'],
-    RequestPasswordReset(Var('email'), Var('lifetimeSecs'))
+  name: 'request_password_reset',
+  body: Query(Lambda(['email'],
+    RequestPasswordReset(Var('email'))
   )),
   role: 'server'
 })

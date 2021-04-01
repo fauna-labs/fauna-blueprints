@@ -1,7 +1,7 @@
 import faunadb from 'faunadb'
 import { RequestPasswordReset } from '../../fauna/src/password-reset'
 
-export const CUSTOM_PASSWORD_RESET_TIMEOUT = 2000
+export const CUSTOM_PASSWORD_RESET_TIMEOUT = 2 // seconds
 
 const q = faunadb.query
 const {
@@ -13,8 +13,8 @@ const {
 
 // set custom timeout for the tests.
 export default CreateFunction({
-  name: 'request-password-reset-adapted',
-  body: Query(Lambda(['email', 'lifetimeSecs'],
+  name: 'request_password_reset',
+  body: Query(Lambda(['email'],
     RequestPasswordReset(Var('email'), CUSTOM_PASSWORD_RESET_TIMEOUT)
   )),
   role: 'server'
