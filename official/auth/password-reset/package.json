@@ -19,7 +19,6 @@
     "license": "0BSD",
     "devDependencies": {
         "ava": "^3.15.0",
-        "dotenv": "^8.2.0",
         "esm": "^3.2.25",
         "fauna-schema-migrate": "^2.0.0",
         "faunadb": "^4.1.1"
