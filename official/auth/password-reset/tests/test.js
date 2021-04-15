@@ -7,7 +7,7 @@ import { delay } from './helpers/_delay'
 import { CUSTOM_PASSWORD_RESET_TIMEOUT } from './resources/_adapted-request-password-reset'
 
 const q = fauna.query
-const { Create, Collection, Identify, Call, Count, Tokens, Lambda, Get, Var } = q
+const { Create, Collection, Identify, Call, Count, Tokens } = q
 
 test.after.always(async (t) => {
   await deleteMigrationDir()
@@ -65,7 +65,7 @@ test(path.basename(__filename) + ': We can ask a password reset token and use it
   t.is(idRes3, true)
 })
 
-test(path.basename(__filename) + ': After the given delay, reset tokens become unusable', async t => {
+test(path.basename(__filename) + ': After the given delay, password reset tokens become unusable', async t => {
   t.plan(1)
   const client = t.context.databaseClients.childClient
   const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
@@ -74,6 +74,19 @@ test(path.basename(__filename) + ': After the given delay, reset tokens become u
   await t.throwsAsync(async () => {
     await resetClient.query(Call('change_password', 'newpassword'))
   }, { instanceOf: fauna.errors.Unauthorized })
+})
+
+test(path.basename(__filename) + ': When passwords become unusable we can still ask a new password reset token', async t => {
+  t.plan(1)
+  const client = t.context.databaseClients.childClient
+  await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  await delay(CUSTOM_PASSWORD_RESET_TIMEOUT * 1000 + 2000)
+  // ask new token.
+  const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
+  const resetClient = getClient(fauna, resetResult.secret)
+  await resetClient.query(Call('change_password', 'newpassword'))
+  const idRes = await client.query(Identify(t.context.accountRef, 'newpassword'))
+  t.is(idRes, true)
 })
 
 test(path.basename(__filename) + ': Only one reset token per account exists', async t => {
