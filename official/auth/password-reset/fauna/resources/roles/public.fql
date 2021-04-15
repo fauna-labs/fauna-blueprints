@@ -1,0 +1,11 @@
+CreateRole({
+  name: 'public',
+  privileges: [
+    {
+      resource: Function('request_password_reset'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

@@ -1,15 +1,14 @@
 {
-    "name": "<blueprint-template>",
+    "name": "password-reset",
     "version": "1.0.0",
-    "description": "<blueprint description>",
+    "description": "Blueprint which showws how to create tokens that can be send via email to reset a password",
     "ava": {
         "require": [
             "esm"
         ]
     },
     "scripts": {
-        "test": "ava -T 200s --fail-fast",
-        "posttest": "npx rimraf fauna/temp"
+        "test": "ava -T 200s --fail-fast"
     },
     "keywords": [
         "fauna",
@@ -22,7 +21,6 @@
         "ava": "^3.15.0",
         "esm": "^3.2.25",
         "fauna-schema-migrate": "^2.0.0",
-        "faunadb": "^4.1.1",
-        "rimraf": "^3.0.2"
+        "faunadb": "^4.1.1"
     }
 }

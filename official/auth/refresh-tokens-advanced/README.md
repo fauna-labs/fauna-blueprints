@@ -19,7 +19,7 @@ The resources in a blueprint are ready to be loaded in your database with a few 
 
 #### How to use
 
-When you set up this blueprint, these resources will become accessible in your database. To get a complete understanding of the functionality, take a look at the [tests](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/refresh-tokens-advanced/tests). The following explanation shows how to use it from the JavaScript driver, but you can also set it up with the fauna schema migrate tool and call the UDFs from your preferred language.  
+When you set up this blueprint, these resources will become accessible in your database. To get a complete understanding of the functionality, take a look at the [tests](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/refresh-tokens-advanced/tests). 
 
 ##### 1. Register
 
