@@ -7,7 +7,7 @@ This folder contains the most basic authentication blueprint that provides all r
 - Register an account
 - Login with an account given credentials
 - Logout the account
-- Write access roles to provide access to data to logged in users. 
+- Write access roles to provide access to data to logged-in users. 
 
 #### Learn
 
@@ -19,11 +19,11 @@ The resources in such a blueprint are ready to be loaded in your database with a
 
 #### How to use
 
-Once set up,  you can register and login accounts. The tokens from these accounts can then be used to provide access to your data. Keep these tokens safe, as they provide access to your data. If you intend to access Fauna directly from the client, consider leaving the security to the experts by using [third-party auth](https://fauna.com/blog/setting-up-sso-authentication-in-fauna-with-auth0) or consider implementing a [more advanced approach](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/refresh-tokens-advanced) with refresh tokens. To get a complete understanding of the functionality, take a look at the [tests](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/register-login-logout/tests).
+Once set up,  you can register and login accounts. Upon successful login, you will receive a token for the account and can use it to access the account's data. Keep these tokens safe, as they provide access to your data. If you intend to access Fauna directly from the client, consider leaving the security to the experts by using [third-party auth](https://fauna.com/blog/setting-up-sso-authentication-in-fauna-with-auth0) or consider implementing a [more advanced approach](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/refresh-tokens-advanced) with refresh tokens. To get a complete understanding of the functionality, take a look at the [tests](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/auth/register-login-logout/tests).
 
 ##### 1. Register
 
-Create a key using the public role to be able to register either via FQL or via the dashboard. Then use it to create a Fauna client that has access to the register function. In case you'd like to limit how many registers can happen, you can take a look at the [rate-limiting blueprint](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/rate-limiting).
+Create a key using the public role to get permissions to register for an anonymous user. Then use it to create a Fauna client that has access to the register function. In case you'd like to limit how many registers can happen, you can take a look at the [rate-limiting blueprint](https://github.com/fauna-brecht/fauna-blueprints/tree/main/official/rate-limiting).
 
 ```javascript
 const publicKey = await client.query(CreateKey({ role: Role('public') }))
