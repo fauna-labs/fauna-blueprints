@@ -1,0 +1,13 @@
+CreateIndex({
+  name: 'example_index_after_ts',
+  source: Collection('example_collection'),
+  values: [
+    {
+      field: ['ts']
+    },
+    {
+      field: ['ref']
+    }
+  ],
+  serialized: true
+})
