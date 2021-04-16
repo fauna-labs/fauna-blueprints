@@ -11,45 +11,30 @@ const {
   Paginate,
   Var,
   Let,
-  Collection,
+  Get,
   Filter,
   Equals,
+  Epoch,
   IsNonEmpty
 } = q
 
-export function CreateDeleteEventsTsAfter (collectionName, afterTime, pageSize) {
-  // You can't specify both afterTime and beforeTime simultaneously.
-  return Paginate(
-    Documents(Collection(collectionName)),
-    { events: true, after: afterTime, size: pageSize }
-  )
-}
-
-export function CreateDeleteEventsTsBefore (collectionName, beforeTime, pageSize) {
-  // You can't specify both afterTime and beforeTime simultaneously.
-  return Paginate(
-    Documents(Collection(collectionName)),
-    { events: true, after: beforeTime, size: pageSize }
-  )
-}
-
 // The name of an index in string format and a Fauna 'Time'.
-export function UpdateEventsAfterTs (indexName, time, pageSize, afterOrBefore) {
-  let paginateParameters = { events: true, after: time, size: 10 }
-  if (afterOrBefore === 'before') {
-    paginateParameters = { events: true, before: time, size: 10 }
-  }
-  const rangeLowerBoundary = afterOrBefore === 'after' ? ToMicros(time) : null
-  const rangeUpperBoundary = afterOrBefore === 'before' ? ToMicros(time) : null
-
+export function EventsAfterTs (indexName, time, pageSize) {
   return Let(
     {
+      collectionFromIndex: Select(['source'], Get(Index(indexName))),
+      // Retrieving created/deleted events is easiest, those can be retrieved by retrieving events on the collection.
+      eventsCreatedOrDeleted: Paginate(
+        Documents(Var('collectionFromIndex')),
+        { events: true, after: time, size: pageSize }
+      ),
+
       // We can use the index to determine which document references were changed since this timestamp.
       documentsCreatedOrUpdated: Paginate(
         Range(
           Match(Index(indexName)),
-          rangeLowerBoundary,
-          rangeUpperBoundary
+          ToMicros(time),
+          null
         ),
         { size: pageSize }
       ),
@@ -59,21 +44,23 @@ export function UpdateEventsAfterTs (indexName, time, pageSize, afterOrBefore) {
         Var('documentsCreatedOrUpdated'),
         Lambda((ts, ref) => Paginate(
           ref,
-          paginateParameters
-        ))
+          { events: true, after: Epoch(0, 'microsecond'), size: 10 }))
       ),
       // Filter out created since you already have created events in 'eventsCreatedOrDeleted'. Therefore you are only interested in updated.
       eventsDocumentsUpdated: q.Filter(
         q.Map(
           Var('eventsDocumentsCreatedOrUpdated'),
           Lambda((eventsForDocs) => Filter(
-            eventsForDocs,
+            Var('eventsForDocRef'),
             Lambda(event => Equals(Select(['action'], event), 'update'))
           ))
         ),
         Lambda(eventsPage => IsNonEmpty(eventsPage))
       )
     },
-    Var('eventsDocumentsUpdated')
+    {
+      eventsCreatedOrDeleted: Var('eventsCreatedOrDeleted'),
+      eventsDocumentsUpdated: Var('eventsDocumentsUpdated')
+    }
   )
 }

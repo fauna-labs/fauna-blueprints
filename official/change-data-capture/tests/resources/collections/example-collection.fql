@@ -1,1 +1,1 @@
-CreateCollection({ name: 'example_collection' })
+CreateCollection({ name: 'example_collection', history_days: null })

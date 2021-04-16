@@ -1,6 +1,6 @@
 
 import faunadb from 'faunadb'
-import { EventsAfterTs } from '../../src/events'
+import { UpdateEventsAfterTs } from '../../src/events'
 
 const q = faunadb.query
 const {
@@ -11,8 +11,8 @@ const {
 } = q
 
 export default CreateFunction({
-  name: 'events_after_ts',
+  name: 'update_events_before',
   body: Query(Lambda(['indexName', 'time', 'pageSize'],
-    EventsAfterTs(Var('indexName'), Var('time'), Var('pageSize'))
+    UpdateEventsAfterTs(Var('indexName'), Var('time'), Var('pageSize'), 'before')
   ))
 })
