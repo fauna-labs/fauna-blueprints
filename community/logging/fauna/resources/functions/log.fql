@@ -1,0 +1,25 @@
+CreateFunction({
+  name: 'log',
+  body: Query(
+    Lambda(
+      ['category', 'message', 'value'],
+      If(
+        Select(['data', Var('category')], Get(Collection('logs')), true),
+        Let(
+          {
+            log: Create(Collection('logs'), {
+              data: {
+                category: Var('category'),
+                message: Var('message'),
+                value: Var('value')
+              }
+            })
+          },
+          Var('value')
+        ),
+        Var('value')
+      )
+    )
+  ),
+  role: 'server'
+})
