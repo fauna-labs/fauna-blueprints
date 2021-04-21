@@ -1,0 +1,7 @@
+CreateRole({
+  name: 'unverified_role',
+  membership: [{ resource: Collection('accounts') }],
+  privileges: [
+
+  ]
+})

@@ -1,0 +1,12 @@
+CreateRole({
+  name: 'membershiprole_verification',
+  membership: [{ resource: Collection('email_verification_request') }],
+  privileges: [
+    {
+      resource: q.Function('verify_account'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

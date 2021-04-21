@@ -1,0 +1,28 @@
+{
+    "name": "email-verification-blueprint",
+    "version": "1.0.0",
+    "description": "This blueprint implements two UDFs, one to request an email verification token which can be sent embedded in an URL via email. Another to mark the account as 'verified' by using the token",
+    "ava": {
+        "require": [
+            "esm"
+        ]
+    },
+    "scripts": {
+        "test": "ava -T 200s --fail-fast",
+        "posttest": "npx rimraf fauna/temp"
+    },
+    "keywords": [
+        "fauna",
+        "auth",
+        "fql"
+    ],
+    "author": "<author>",
+    "license": "0BSD",
+    "devDependencies": {
+        "ava": "^3.15.0",
+        "esm": "^3.2.25",
+        "fauna-schema-migrate": "^2.0.0",
+        "faunadb": "^4.1.1",
+        "rimraf": "^3.0.2"
+    }
+}
