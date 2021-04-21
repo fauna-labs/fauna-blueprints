@@ -1,0 +1,15 @@
+CreateFunction({
+  name: 'validate_email',
+  body: Query(Lambda(['email'],
+    If(
+      ContainsStrRegex(
+        Var('email'),
+        "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+      ),
+      // If it's valid, we continue with the original statement
+      true,
+      // Else we Abort!
+      Abort('Invalid e-mail provided')
+    ))),
+  role: 'server'
+})

@@ -1,0 +1,28 @@
+{
+    "name": "validation",
+    "version": "1.0.0",
+    "description": "The validation blueprint contains a number of examples to validate data",
+    "ava": {
+        "require": [
+            "esm"
+        ]
+    },
+    "scripts": {
+        "test": "ava -T 200s --fail-fast",
+        "posttest": "npx rimraf fauna/temp"
+    },
+    "keywords": [
+        "fauna",
+        "auth",
+        "fql"
+    ],
+    "author": "brecht.derooms@fauna.com",
+    "license": "0BSD",
+    "devDependencies": {
+        "ava": "^3.15.0",
+        "esm": "^3.2.25",
+        "fauna-schema-migrate": "^2.0.0",
+        "faunadb": "^4.1.1",
+        "rimraf": "^3.0.2"
+    }
+}
