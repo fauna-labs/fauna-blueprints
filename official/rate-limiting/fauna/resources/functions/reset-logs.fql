@@ -1,0 +1,17 @@
+CreateFunction({
+  name: 'reset_logs',
+  body: Query(Lambda(['action', 'identifier'],
+    Let(
+      {
+        logsPage: Paginate(
+          Match(Index('access_logs_by_action_and_identity_ordered_by_ts'),
+            Var('action'), Var('identifier')
+          ), {
+            size: 100000
+          })
+      },
+      Map(Var('logsPage'), Lambda((ts, ref) => Delete(ref)))
+    )
+  )),
+  role: 'server'
+})

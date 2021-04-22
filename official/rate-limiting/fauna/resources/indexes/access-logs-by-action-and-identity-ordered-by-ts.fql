@@ -13,6 +13,9 @@ CreateIndex({
     {
       field: ['ts'],
       reverse: true
+    },
+    {
+      field: ['ref']
     }
   ],
   // We set this index to serialized: false in order to reduce contention (and avoid TransactionAborted due to too many retries)

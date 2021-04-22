@@ -28,7 +28,7 @@ test.beforeEach(async (t) => {
   const client = t.context.databaseClients.childClient
   await populateDatabaseSchemaFromFiles(schemaMigrate, fauna.query, client, [
     'fauna/resources/collections/access-logs.fql',
-    'fauna/resources/functions/add-rate-limiting.js',
+    'fauna/resources/functions/rate-limit.js',
     'fauna/resources/indexes/access-logs-by-action-and-identity-ordered-by-ts.fql',
     // A few functions that use the ratelimiting
     'tests/resources/_email-ratelimited-add.fql',
@@ -50,27 +50,27 @@ test(path.basename(__filename) + ': you can only call the same rate limiting cal
   t.plan(6)
   const client = t.context.databaseClients.childClient
 
-  const res1 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  const res2 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  const res3 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res1 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res2 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res3 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   t.is(res1, 4)
   t.is(res2, 4)
   t.is(res3, 4)
   try {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   } catch (err) {
-    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMIT')
   }
   // it works fine for another identifier
-  const res4 = await client.query(Do(Call('ratelimit', 'add', 'otheridentifier', 3, 1000), Add(2, 2)))
+  const res4 = await client.query(Do(Call('rate_limit', 'add', 'otheridentifier', 3, 1000), Add(2, 2)))
   t.is(res4, 4)
 
   // Waiting will make it available again.
   await delay(1000)
   await t.notThrowsAsync(async () => {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   })
 })
 
@@ -79,22 +79,22 @@ test(path.basename(__filename) + ': ratelimiting is handled correctly when there
   t.plan(2)
   const client = t.context.databaseClients.childClient
 
-  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   await delay(1000)
 
-  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
 
   try {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   } catch (err) {
-    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMIT')
   }
   try {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   } catch (err) {
-    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMIT')
   }
 })
 
@@ -103,30 +103,30 @@ test(path.basename(__filename) + ': ratelimit successfully reduces the amount of
   t.plan(7)
   const client = t.context.databaseClients.childClient
 
-  const res1 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  const res2 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-  const res3 = await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res1 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res2 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res3 = await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   t.is(res1, 4)
   t.is(res2, 4)
   t.is(res3, 4)
   try {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   } catch (err) {
-    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMIT')
   }
   // it works fine for another action
-  const res4 = await client.query(Do(Call('ratelimit', 'add2', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  const res4 = await client.query(Do(Call('rate_limit', 'add2', 'brecht@test.com', 3, 1000), Add(2, 2)))
   t.is(res4, 4)
   // it works fine for another identifier
-  const res5 = await client.query(Do(Call('ratelimit', 'add', 'otheridentifier', 3, 1000), Add(2, 2)))
+  const res5 = await client.query(Do(Call('rate_limit', 'add', 'otheridentifier', 3, 1000), Add(2, 2)))
   t.is(res5, 4)
 
   // Waiting will make it available again.
   await delay(1000)
   await t.notThrowsAsync(async () => {
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
-    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+    await client.query(Do(Call('rate_limit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   })
 })
 
@@ -148,7 +148,7 @@ test(path.basename(__filename) + ': you can also use it inside another UDF', asy
   try {
     await client.query(Call('email_ratelimited_add'))
   } catch (err) {
-    t.is(err.requestResult.responseContent.errors[0].cause[0].cause[0].description, 'ERROR_RATE_LIMITING')
+    t.is(err.requestResult.responseContent.errors[0].cause[0].cause[0].description, 'ERROR_RATE_LIMIT')
   }
   await delay(1000)
 })
@@ -187,10 +187,10 @@ test(path.basename(__filename) + ': ratelimiting reduces the cost of read operat
   ))
 
   const GetUsers = q.Map(Paginate(Documents(Collection('users'))), Lambda(x => Get(x)))
-  await loggedInClient1.query(Do(Call('ratelimit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
-  await loggedInClient1.query(Do(Call('ratelimit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
+  await loggedInClient1.query(Do(Call('rate_limit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
+  await loggedInClient1.query(Do(Call('rate_limit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
   await t.throwsAsync(async () => {
-    await loggedInClient1.query(Do(Call('ratelimit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
+    await loggedInClient1.query(Do(Call('rate_limit', 'get_users', CurrentIdentity(), 2, 1000), GetUsers))
   })
   // wait for observer messages to arrive.
   await delay(1000)

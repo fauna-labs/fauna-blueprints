@@ -2,21 +2,28 @@
 
 #### Functionality:
 
-This blueprint contains the functionality to add identity-based rate-limiting to your FQL functions. Such an identity can be an email, a username or a reference to a document (e.g. a user document).  The blueprint exposes the functionality as a User Defined Function called 'ratelimit'.
+This blueprint contains the functionality to add identity-based rate-limiting to your FQL functions. Such an identity can be an email, a username or a reference to a document (e.g. a user document).  The blueprint exposes the functionality in the format of three UDFS:
 
-| Function  | Parameters                                                   |                                                              |                                                           |                              |
-| --------- | ------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------- |
-|           | action                                                       | identity                                                     | number of calls                                           | time window                  |
-| ratelimit | Unique identifier for the action you want to rate-limit, for example: "register" or "login" | the unique identifier of the rate-limited identity. This can be an email, a user reference or just 'public' to have a global rate-limit. | The number of accepted calls within the given time window | time window in milliseconds. |
+- **rate_limit**: add rate-limiting for a specific action and identity by defining the number of calls that can occur in a given timewindow.
+- **call_limit**: define how many calls can be done of a specific action and identity combination.
+- **reset_logs:** reset the logs for a given action or identity which resets the limits. 
 
-If the query is called more than is allowed in the given time-window, it will Abort and throw an error with 'ERROR_RATE_LIMITING' in the description, else rate-limiting allows the query to pass. 
+|            | **action**                                                   | **identity**                                                 | **number of calls** | **time window**    |
+| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------- | ------------------ |
+| rate_limit | unique identifier for the action you want to rate-limit, e.g. 'regiser', 'login', 'get_data' | unique identifier, this can be an email, user reference or just a static string (e.g. 'public'), | # of accepted calls | time window in ms. |
+|            | **action**                                                   | **identity**                                                 | **number of calls** |                    |
+| call_limit | same as rate_limit                                           | same as rate_limit                                           | same as rate_limit  | /                  |
+|            | **action**                                                   | **identity**                                                 |                     |                    |
+| reset_logs | same as rate_limit                                           | same as rate_limit                                           | /                   | /                  |
+
+If the query is called more than is allowed in the given time-window, it will Abort and throw an error with 'ERROR_RATE_LIMIT' in the description, else rate-limiting allows the query to pass. 
 
 #### How to use
 
 You can insert the call of the ratelimit UDF into another query. Please do so in an environment where the user can **not** alter the query. That means, either use it in your backend or insert such a call within another User Defined Function. 
 
 ```
-Call('ratelimit', 'action', 'identity', 3, 1000)
+Call('rate_limit', 'action', 'identity', 3, 1000)
 ```
 
 ##### Example 1: rate limit heavy queries
@@ -25,7 +32,7 @@ Imagine you have FQL logic to retrieve data that is quite expensive. To rate-lim
 
 ```
 Do(
-	Call('ratelimit', 'retrieve-data', Identity(), 1, 60000),
+	Call('rate_limit', 'retrieve-data', Identity(), 1, 60000),
 	<your quite expensive FQL logic>
 )
 ```
@@ -38,8 +45,8 @@ Imagine you have a UDF named 'login'. To rate-limit the amount of logins to 1 pe
 
 ```
 Do(
-	Call('ratelimit', 'login', 'brecht@brechtsdomain.com', 1, 60000),
-	Call('login', someemail, password)
+	Call('rate_limit', 'login', 'brecht@brechtsdomain.com', 1, 60000),
+	Call('login', 'someemail@emaildomain.com', 'password')
 )
 ```
 
@@ -49,10 +56,27 @@ Imagine you have a UDF named 'register'. A register is typically anonymous, you 
 
 ```
 Do(
-	Call('ratelimit', 'register', 'public', 100, 3600000),
-	Call('register', "someemail", "password")
+	Call('rate_limit', 'register', 'public', 100, 3600000),
+	Call('register', 'someemail@emaildomain.com', 'password')
 )
 ```
+
+##### Example 4: call limit and resetting the limit with a login action.
+
+A good example for a call limit and resetting the limit is to limit failed attempts of a login action.  Imagine that we have a login UDF which returns false in case it fails. 
+
+```javascript
+Let({ loginResult: Call('login', 'someemail@emaildomain.com', 'password') },
+  If(
+    Equals(Var('loginResult'), false),
+    Call('call_limit', 'failed_login', 'someemail@emaildomain.com', 3),
+    // clear previous fails and login.
+    Do(Call('reset_logs', 'failed_login', 'someemail@emaildomain.com'), Var('loginResult'))
+  )
+)
+```
+
+In case the login fails, a failed_login log will be added. If the login succeeds potential failed_login logs for this user will be removed. 
 
 #### Learn
 

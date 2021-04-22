@@ -21,7 +21,7 @@ CreateRole({
       }
     },
     {
-      resource: Function('ratelimit'),
+      resource: Function('rate_limit'),
       actions: {
         call: true
       }

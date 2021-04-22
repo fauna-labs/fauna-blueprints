@@ -24,7 +24,8 @@ const {
   Do
 } = q
 
-const RATE_LIMITING = 'ERROR_RATE_LIMITING'
+const RATE_LIMITING = 'ERROR_RATE_LIMIT'
+const CALL_LIMIT = 'ERROR_CALL_LIMIT'
 
 function CreateAccessLogEntry (action, identifier) {
   return Create(Collection('access_logs'), {
@@ -35,7 +36,7 @@ function CreateAccessLogEntry (action, identifier) {
   })
 }
 
-function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
+export function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
   return Let(
     {
       logsPage: Paginate(Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier), {
@@ -54,7 +55,7 @@ function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
       Let(
         {
 
-          timestamp: Select(['data', Subtract(calls, 1)], Var('logsPage')),
+          timestamp: Select(['data', Subtract(calls, 1), 0], Var('logsPage')),
           // transform the Fauna timestamp to a Time object
           time: Epoch(Var('timestamp'), 'microseconds'),
           // How long ago was that event in ms
@@ -71,4 +72,19 @@ function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
   )
 }
 
-export default AddRateLimiting
+export function AddCallLimit (action, identifier, calls) {
+  return Let(
+    {
+      logsPage: Paginate(Match(Index('access_logs_by_action_and_identity_ordered_by_ts'), action, identifier), {
+        size: calls
+      })
+    },
+    If(
+      // Either the page is empty or there are less calls than the limit logged.
+      Or(IsEmpty(Var('logsPage')), LT(Count(Select(['data'], Var('logsPage'))), calls)),
+      // In that case, Create a log and return.
+      Do(CreateAccessLogEntry(action, identifier), true),
+      Abort(CALL_LIMIT)
+    )
+  )
+}
