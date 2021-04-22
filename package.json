@@ -18,7 +18,7 @@
     "api"
   ],
   "author": "Brecht De Rooms <brecht.derooms@fauna.com> (https://www.fauna.com/)",
-  "license": "0BSD",
+  "license": "MIT-0",
   "bugs": {
     "url": "https://github.com/fauna-brecht/fauna-blueprints/issues"
   },
