@@ -27,13 +27,13 @@ test.beforeEach(async (t) => {
   t.context.databaseClients = await setupTestDatabase(fauna, t.context.testName)
   const client = t.context.databaseClients.childClient
   await populateDatabaseSchemaFromFiles(schemaMigrate, fauna.query, client, [
-    'fauna/resources/collections/access_logs.fql',
-    'fauna/resources/functions/add_rate_limiting.js',
-    'fauna/resources/indexes/access_logs_by_action_and_identity_ordered_by_ts.fql',
+    'fauna/resources/collections/access-logs.fql',
+    'fauna/resources/functions/add-rate-limiting.js',
+    'fauna/resources/indexes/access-logs-by-action-and-identity-ordered-by-ts.fql',
     // A few functions that use the ratelimiting
-    'tests/resources/_email_ratelimited_add.fql',
+    'tests/resources/_email-ratelimited-add.fql',
     'tests/resources/_users.fql',
-    'tests/resources/_users_role.fql'
+    'tests/resources/_users-role.fql'
   ])
 
   t.context.testUserRef1 = (await client.query(Create(Collection('users'), { data: { name: 'Brecht' } }))).ref
@@ -72,6 +72,30 @@ test(path.basename(__filename) + ': you can only call the same rate limiting cal
     await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
     await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
   })
+})
+
+test(path.basename(__filename) + ': ratelimiting is handled correctly when there are old ratelimit logs', async t => {
+  // define the amount of tests
+  t.plan(2)
+  const client = t.context.databaseClients.childClient
+
+  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await delay(1000)
+
+  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+
+  try {
+    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  } catch (err) {
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+  }
+  try {
+    await client.query(Do(Call('ratelimit', 'add', 'brecht@test.com', 3, 1000), Add(2, 2)))
+  } catch (err) {
+    t.is(err.requestResult.responseContent.errors[0].cause[0].description, 'ERROR_RATE_LIMITING')
+  }
 })
 
 test(path.basename(__filename) + ': ratelimit successfully reduces the amount of calls. ', async t => {

@@ -1,6 +1,6 @@
 
 import faunadb from 'faunadb'
-import AddRateLimiting from '../../src/rate_limiting'
+import AddRateLimiting from '../../src/rate-limiting'
 
 const q = faunadb.query
 const {

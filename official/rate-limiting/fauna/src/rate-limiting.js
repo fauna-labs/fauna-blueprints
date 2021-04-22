@@ -62,7 +62,7 @@ function AddRateLimiting (action, identifier, calls, perMilliSeconds) {
         },
         If(
           GTE(Var('ageInMs'), perMilliSeconds),
-          true,
+          Do(CreateAccessLogEntry(action, identifier), true),
           // Else.. Abort! Rate-limiting in action
           Abort(RATE_LIMITING)
         )
