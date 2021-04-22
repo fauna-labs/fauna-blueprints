@@ -27,7 +27,7 @@ function RequestPasswordReset (email, lifetimeSecs) {
 
 function ResetPassword (password) {
   // The token that is used to change the password belongs to a document from the
-  // Collection('password_reset_request'), therefore the Identity() reference will point to such a doc.
+  // Collection('password_reset_request'), therefore the CurrentIdentity() reference will point to such a doc.
   // When we created the document we saved the account to it.
   return Let(
     {

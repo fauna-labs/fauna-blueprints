@@ -32,7 +32,7 @@ Imagine you have FQL logic to retrieve data that is quite expensive. To rate-lim
 
 ```
 Do(
-	Call('rate_limit', 'retrieve-data', Identity(), 1, 60000),
+	Call('rate_limit', 'retrieve-data', CurrentIdentity(), 1, 60000),
 	<your quite expensive FQL logic>
 )
 ```
