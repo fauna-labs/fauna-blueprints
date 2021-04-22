@@ -1,0 +1,16 @@
+CreateRole({
+  name: 'loggedin',
+  membership: [
+    {
+      resource: Collection('accounts')
+    }
+  ],
+  privileges: [
+    {
+      resource: Function('change_password'),
+      actions: {
+        call: true
+      }
+    }
+  ]
+})

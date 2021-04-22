@@ -1,26 +1,31 @@
 {
-    "name": "password-reset",
+    "name": "refresh-token-advanced",
     "version": "1.0.0",
-    "description": "Blueprint which showws how to create tokens that can be send via email to reset a password",
+    "description": "A simple register login implementation ",
     "ava": {
         "require": [
             "esm"
         ]
     },
     "scripts": {
-        "test": "ava -T 200s --fail-fast"
+        "test": "ava -T 200s --fail-fast",
+        "posttest": "npx rimraf fauna/temp"
     },
     "keywords": [
         "fauna",
         "auth",
         "fql"
     ],
-    "author": "<author>",
+    "author": "Brecht De Rooms <brecht.derooms@fauna.com> (https://www.fauna.com/)",
     "license": "0BSD",
     "devDependencies": {
         "ava": "^3.15.0",
         "esm": "^3.2.25",
         "fauna-schema-migrate": "^2.0.0",
-        "faunadb": "^4.1.1"
+        "faunadb": "4.1.1",
+        "rimraf": "^3.0.2"
+    },
+    "dependencies": {
+        "shelljs": "^0.8.4"
     }
 }

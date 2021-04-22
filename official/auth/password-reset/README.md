@@ -4,8 +4,9 @@
 
 This blueprint contains the functionality to implement a password reset flow in FQL. I provides two User Defined Functions (UDF):
 
-- **Request password reset** with the UDF named 'request_password_reset' your users can request a token that can be used to initiate a password change. This token can then be sent to your users via the communication of your choice (typically embedded in a link in an email) . By default, they are valid for 30 minutes
-- **Change password** with the UDF named 'change_password' you can then change the password given that you call the UDF with a password reset token. Such a password reset token is returned by the request_password_reset UDF. 
+- **Request password reset**: when a password is forogotten, the UDF named 'request_password_reset' can be used. Using this UDF you can request a token that can be used to initiate a password change. This token can then be sent to your users via the communication of your choice (typically embedded in a link in an email) . By default, they are valid for 30 minutes
+- **Reset password** with the UDF named 'reset_password' you can then change the password given that you call the UDF with a password reset token. Such a password reset token is returned by the request_password_reset UDF. 
+- **Change password** when the password is known yet we want to change is, the 'change_password' UDF can be used by providing the old and new password. You would typically call this with a client that is logged in. 
 
 #### Learn
 

@@ -9,10 +9,6 @@ import { CUSTOM_PASSWORD_RESET_TIMEOUT } from './resources/_adapted-request-pass
 const q = fauna.query
 const { Create, Collection, Identify, Call, Count, Tokens } = q
 
-test.after.always(async (t) => {
-  await deleteMigrationDir()
-})
-
 let index = 0
 test.beforeEach(async (t) => {
   t.context.testName = path.basename(__filename) + (index = ++index)
@@ -28,7 +24,7 @@ test.beforeEach(async (t) => {
     'fauna/resources/indexes/accounts-by-email.fql',
     'fauna/resources/indexes/password-reset-requests-by-account.fql',
     'fauna/resources/indexes/tokens-by-instance.fql',
-    'fauna/resources/functions/change-password.js',
+    'fauna/resources/functions/reset-password.js',
     'fauna/resources/roles/reset-token-role.fql',
     'fauna/resources/roles/public.fql',
     'tests/resources/_adapted-request-password-reset.js'
@@ -60,7 +56,7 @@ test(path.basename(__filename) + ': We can ask a password reset token and use it
 
   const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
   const resetClient = getClient(fauna, resetResult.secret)
-  await resetClient.query(Call('change_password', 'newpassword'))
+  await resetClient.query(Call('reset_password', 'newpassword'))
   const idRes3 = await client.query(Identify(t.context.accountRef, 'newpassword'))
   t.is(idRes3, true)
 })
@@ -72,7 +68,7 @@ test(path.basename(__filename) + ': After the given delay, password reset tokens
   const resetClient = getClient(fauna, resetResult.secret)
   await delay(CUSTOM_PASSWORD_RESET_TIMEOUT * 1000 + 2000)
   await t.throwsAsync(async () => {
-    await resetClient.query(Call('change_password', 'newpassword'))
+    await resetClient.query(Call('reset_password', 'newpassword'))
   }, { instanceOf: fauna.errors.Unauthorized })
 })
 
@@ -84,7 +80,7 @@ test(path.basename(__filename) + ': When passwords become unusable we can still 
   // ask new token.
   const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
   const resetClient = getClient(fauna, resetResult.secret)
-  await resetClient.query(Call('change_password', 'newpassword'))
+  await resetClient.query(Call('reset_password', 'newpassword'))
   const idRes = await client.query(Identify(t.context.accountRef, 'newpassword'))
   t.is(idRes, true)
 })
@@ -103,10 +99,10 @@ test(path.basename(__filename) + ': Only one reset token per account exists', as
   tokenCount = await client.query(Count(Tokens()))
   t.is(tokenCount, 1)
   await t.throwsAsync(async () => {
-    await resetClient.query(Call('change_password', 'newpassword'))
+    await resetClient.query(Call('reset_password', 'newpassword'))
   }, { instanceOf: fauna.errors.Unauthorized })
 
-  await resetClient2.query(Call('change_password', 'newpassword2'))
+  await resetClient2.query(Call('reset_password', 'newpassword2'))
   const idRes1 = await client.query(Identify(t.context.accountRef, 'newpassword2'))
   t.is(idRes1, true)
 })
@@ -116,10 +112,10 @@ test(path.basename(__filename) + ': A password reset token can only be used once
   const client = t.context.databaseClients.childClient
   const resetResult = await client.query(Call('request_password_reset', 'brecht@brechtsdomain.com'))
   const resetClient = getClient(fauna, resetResult.secret)
-  await resetClient.query(Call('change_password', 'newpassword'))
+  await resetClient.query(Call('reset_password', 'newpassword'))
 
   await t.throwsAsync(async () => {
-    await resetClient.query(Call('change_password', 'newpassword2'))
+    await resetClient.query(Call('reset_password', 'newpassword2'))
   }, { instanceOf: fauna.errors.Unauthorized })
   const idRes1 = await client.query(Identify(t.context.accountRef, 'newpassword'))
   t.is(idRes1, true)

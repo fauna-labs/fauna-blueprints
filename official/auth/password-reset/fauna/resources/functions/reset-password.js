@@ -1,5 +1,5 @@
 import faunadb from 'faunadb'
-import { ChangePassword } from '../../src/password-reset'
+import { ResetPassword } from '../../src/password-reset'
 
 const q = faunadb.query
 const {
@@ -10,9 +10,9 @@ const {
 } = q
 
 export default CreateFunction({
-  name: 'change_password',
+  name: 'reset_password',
   body: Query(Lambda(['password'],
-    ChangePassword(Var('password'))
+    ResetPassword(Var('password'))
   )),
   role: 'server'
 })

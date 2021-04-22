@@ -80,4 +80,3 @@ test(path.basename(__filename) + ': an unverified account does not have access t
   const account2 = await loggedInClient.query(Get(account.ref))
   t.truthy(account2)
 })
-

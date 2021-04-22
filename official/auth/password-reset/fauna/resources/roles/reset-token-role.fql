@@ -10,7 +10,7 @@ CreateRole({
   privileges: [
     // A reset token can only reset
     {
-      resource: q.Function('change_password'),
+      resource: q.Function('reset_password'),
       actions: {
         call: true
       }
