@@ -1,5 +1,7 @@
 ### An advanced refresh flow blueprint in pure FQL
 
+To learn more about the implementation of this blueprint, take a look at [this](http://fauna.link/fauna-auth-blueprint2) blogpost.
+
 #### Functionality:
 
 This blueprint contains the functionality to implement [refresh tokens](https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/) in FQL. 
