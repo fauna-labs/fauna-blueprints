@@ -66,13 +66,17 @@ Do(
 A good example for a call limit and resetting the limit is to limit failed attempts of a login action.  Imagine that we have a login UDF which returns false in case it fails. 
 
 ```javascript
-Let({ loginResult: Call('login', 'someemail@emaildomain.com', 'password') },
-  If(
-    Equals(Var('loginResult'), false),
+Do( 
     Call('call_limit', 'failed_login', 'someemail@emaildomain.com', 3),
-    // clear previous fails and login.
-    Do(Call('reset_logs', 'failed_login', 'someemail@emaildomain.com'), Var('loginResult'))
-  )
+    Let({ loginResult: Call('login', 'someemail@emaildomain.com', 'password') },
+      If(
+        Equals(Var('loginResult'), false),
+        false,
+        // clear previous fails and login, this would allow for 2 fails max, after the third fail, they're 
+        // blocked until an admin unblocks the user.
+        Do(Call('reset_logs', 'failed_login', 'someemail@emaildomain.com'), Var('loginResult'))
+      )
+    )
 )
 ```
 
