@@ -34,7 +34,7 @@ export function LoginAccount (email, password, accessTtlSeconds) {
         // want to call it from the frontend, it ideally doesn't return an error to the user.
         // Verify whether our login credentials are correct with Identify.
         authenticated: Identify(Var('accountRef'), password)
-        // Once identified, an access and refresh in case authentication succeeded.
+        // Once identified, an access token is provided in case authentication succeeded.
       },
       {
         token: If(Var('authenticated'), CreateAccessToken(Var('accountRef'), accessTtlSeconds), false),
